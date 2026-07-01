@@ -1,0 +1,193 @@
+@font-face {
+  font-family: 'Supreme';
+  src: url('/fonts/Supreme-Variable.woff2') format('woff2'),
+       url('/fonts/Supreme-Variable.woff') format('woff'),
+       url('/fonts/Supreme-Variable.ttf') format('truetype');
+  font-weight: 100 800;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Supreme';
+  src: url('/fonts/Supreme-VariableItalic.woff2') format('woff2'),
+       url('/fonts/Supreme-VariableItalic.woff') format('woff'),
+       url('/fonts/Supreme-VariableItalic.ttf') format('truetype');
+  font-weight: 100 800;
+  font-display: swap;
+  font-style: italic;
+}
+
+@import "tailwindcss";
+@import "@heroui/react/styles";
+
+@source "../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
+
+@theme {
+  --font-sans: "Supreme", sans-serif;
+
+  --color-brand-50: #f4f7fa;
+  --color-brand-100: #e9eff4;
+  --color-brand-200: #c8dbe6;
+  --color-brand-300: #a6c6d8;
+  --color-brand-400: #639cbc;
+  --color-brand-500: #33658a;
+  --color-brand-600: #2a526e;
+  --color-brand-700: #1f3d53;
+  --color-brand-800: #152937;
+  --color-brand-900: #0a141b;
+  --color-brand: #33658a;
+}
+
+body {
+  @apply bg-zinc-50 text-zinc-900 font-sans antialiased overflow-x-hidden;
+  background-image: radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 100%);
+  background-attachment: fixed;
+}
+
+/* Custom Webkit scrollbar for premium touch */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Hide scrollbars for sliders */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES (White base with high contrast)
+   ========================================================================== */
+
+/* Main page/container backgrounds */
+.bg-zinc-950,
+.bg-zinc-955,
+.bg-zinc-900 {
+  background-color: #ffffff !important;
+}
+
+/* Content cards, list items, and input text fields */
+.bg-zinc-900\/50,
+.bg-zinc-900\/30,
+.bg-zinc-900\/20,
+.bg-zinc-900\/10,
+.bg-zinc-900\/40,
+.bg-zinc-900\/60,
+.bg-zinc-900\/5 {
+  background-color: #f8fafc !important;
+}
+
+/* Standard structural borders and dividing lines */
+.border-zinc-800,
+.border-zinc-850,
+.border-zinc-855,
+.border-zinc-900 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Horizontal separators */
+.h-px.bg-zinc-900,
+.h-px.bg-zinc-800,
+.h-px.bg-zinc-850 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Text elements - convert dark mode light text to high contrast dark slate */
+.text-white,
+h1, h2, h3, h4, h5, h6,
+.text-zinc-100,
+.text-zinc-200,
+.text-zinc-300 {
+  color: #0f172a !important;
+}
+
+/* Secondary information and descriptions */
+.text-zinc-400,
+.text-zinc-500 {
+  color: #475569 !important;
+}
+
+/* Chat bubbles, tags, and badge backgrounds */
+.bg-zinc-100,
+.bg-zinc-200 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+/* Input fields & dropdowns color config */
+input, 
+select, 
+textarea,
+input::placeholder,
+textarea::placeholder {
+  color: #0f172a !important;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Glassmorphism helpers - premium light mode glass */
+.glass {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01) !important;
+}
+
+/* Headers and bottom tab menus */
+header.glass,
+nav.glass,
+nav.fixed {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Hover effects for sidebars & item lists */
+.hover\:bg-zinc-900:hover,
+.hover\:bg-zinc-800\/50:hover,
+.hover\:bg-zinc-800\/40:hover,
+.hover\:bg-zinc-900\/50:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Chat text messages contrast safety */
+.text-white-force {
+  color: #ffffff !important;
+}
+
+/* Filled elements must preserve bright white text color */
+.bg-brand-500, 
+.bg-brand-600, 
+.bg-brand-700, 
+.bg-danger, 
+.bg-danger-500, 
+.bg-success, 
+.bg-success-500, 
+.bg-warning,
+.bg-warning-500,
+.bg-red-500,
+.bg-emerald-500,
+.bg-amber-500 {
+  &, & *, &.text-white, & .text-white, & span, & div, & h2 {
+    color: #ffffff !important;
+  }
+}
