@@ -23,7 +23,7 @@ export interface BadgeProps {
   onRemove?: () => void;
 }
 
-const variantStyles: Record<BadgeProps['variant'], string> = {
+const variantStyles: Record<'default' | 'success' | 'warning' | 'danger' | 'info' | 'brand' | 'outline' | 'ghost', string> = {
   default: 'bg-zinc-800 text-zinc-300 border border-zinc-700',
   success: 'bg-success-500/15 text-success-400 border border-success-500/30',
   warning: 'bg-warning-500/15 text-warning-400 border border-warning-500/30',
@@ -34,14 +34,14 @@ const variantStyles: Record<BadgeProps['variant'], string> = {
   ghost: 'bg-transparent text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 border border-transparent',
 };
 
-const sizeStyles: Record<BadgeProps['size'], string> = {
+const sizeStyles: Record<'xs' | 'sm' | 'md' | 'lg', string> = {
   xs: 'px-2 py-0.5 text-[9px] gap-1',
   sm: 'px-2.5 py-1 text-[10px] gap-1.5',
   md: 'px-3 py-1 text-xs gap-1.5',
   lg: 'px-4 py-1.5 text-sm gap-2',
 };
 
-const shapeStyles: Record<BadgeProps['shape'], string> = {
+const shapeStyles: Record<'rounded' | 'pill' | 'square', string> = {
   rounded: 'rounded-xl',
   pill: 'rounded-full',
   square: 'rounded-lg',

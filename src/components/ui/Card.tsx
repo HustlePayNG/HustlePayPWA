@@ -17,7 +17,7 @@ export interface CardProps {
   style?: React.CSSProperties;
 }
 
-const variantStyles: Record<CardProps['variant'], string> = {
+const variantStyles: Record<'default' | 'glass' | 'elevated' | 'bordered' | 'gradient', string> = {
   default: 'bg-zinc-900/60 border border-zinc-800',
   glass: 'glass border border-zinc-800/80 bg-zinc-900/40 backdrop-blur-xl',
   elevated: 'bg-zinc-950 border border-zinc-800 shadow-xl shadow-black/30',
@@ -25,7 +25,7 @@ const variantStyles: Record<CardProps['variant'], string> = {
   gradient: 'bg-gradient-to-br from-brand-600/20 via-brand-700/5 to-zinc-950 border border-brand-500/20',
 };
 
-const paddingStyles: Record<CardProps['padding'], string> = {
+const paddingStyles: Record<'none' | 'sm' | 'md' | 'lg', string> = {
   none: '',
   sm: 'p-3',
   md: 'p-4',

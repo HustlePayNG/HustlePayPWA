@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button, ButtonProps } from './Button';
+import { Button } from './Button';
+import type { ButtonProps } from './Button';
 
 export interface EmptyStateProps {
   /** Icon */
@@ -32,13 +33,13 @@ export interface EmptyStateProps {
   illustration?: React.ReactNode;
 }
 
-const sizeStyles: Record<EmptyStateProps['size'], string> = {
+const sizeStyles: Record<'sm' | 'md' | 'lg', string> = {
   sm: 'py-6 px-4',
   md: 'py-12 px-6',
   lg: 'py-16 px-8',
 };
 
-const alignStyles: Record<EmptyStateProps['align'], string> = {
+const alignStyles: Record<'center' | 'left', string> = {
   center: 'text-center items-center',
   left: 'text-left items-start',
 };

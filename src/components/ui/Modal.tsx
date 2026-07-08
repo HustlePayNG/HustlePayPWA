@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ModalProps as HeroUIModalProps } from '@heroui/react';
 import {
   Modal as HeroUIModal,
   ModalBackdrop,
@@ -7,7 +8,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  ModalProps as HeroUIModalProps,
 } from '@heroui/react';
 
 export interface ModalProps extends Omit<HeroUIModalProps, 'children'> {
@@ -37,9 +37,11 @@ export interface ModalProps extends Omit<HeroUIModalProps, 'children'> {
   containerClassName?: string;
   /** Backdrop className */
   backdropClassName?: string;
+  /** Custom className */
+  className?: string;
 }
 
-const sizeStyles: Record<ModalProps['size'], string> = {
+const sizeStyles: Record<'sm' | 'md' | 'lg' | 'xl' | 'full', string> = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
@@ -47,7 +49,7 @@ const sizeStyles: Record<ModalProps['size'], string> = {
   full: 'max-w-[90vw] lg:max-w-[60vw]',
 };
 
-const subtitleStyles: Record<ModalProps['subtitleVariant'], string> = {
+const subtitleStyles: Record<'brand' | 'danger' | 'success' | 'warning' | 'default', string> = {
   brand: 'text-brand-400',
   danger: 'text-danger-400',
   success: 'text-success-400',
@@ -95,48 +97,49 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
       <HeroUIModal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        ref={ref}
         {...props}
       >
         <ModalBackdrop className={defaultBackdropClassName}>
           <ModalContainer className={defaultContainerClassName}>
             <ModalDialog className="outline-none flex flex-col h-full">
-              {headerContent || title || showCloseButton ? (
-                <ModalHeader className="flex flex-col gap-1 text-left pr-4 mt-4 px-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 pr-4">
-                      {subtitle && (
-                        <span className={`text-xs uppercase font-extrabold tracking-widest ${subtitleStyles[subtitleVariant]}`}>
-                          {subtitle}
-                        </span>
+              <div ref={ref} className="outline-none flex flex-col h-full w-full">
+                {headerContent || title || showCloseButton ? (
+                  <ModalHeader className="flex flex-col gap-1 text-left pr-4 mt-4 px-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-4">
+                        {subtitle && (
+                          <span className={`text-xs uppercase font-extrabold tracking-widest ${subtitleStyles[subtitleVariant]}`}>
+                            {subtitle}
+                          </span>
+                        )}
+                        {title && <h3 className="text-lg font-extrabold text-white mt-1">{title}</h3>}
+                      </div>
+                      {showCloseButton && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenChange?.(false)}
+                          className="p-1.5 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors flex-shrink-0"
+                          aria-label={closeButtonAriaLabel}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </button>
                       )}
-                      {title && <h3 className="text-lg font-extrabold text-white mt-1">{title}</h3>}
                     </div>
-                    {showCloseButton && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenChange?.(false)}
-                        className="p-1.5 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors flex-shrink-0"
-                        aria-label={closeButtonAriaLabel}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </ModalHeader>
-              ) : null}
+                  </ModalHeader>
+                ) : null}
 
-              <ModalBody className="flex-1 overflow-y-auto px-6 pb-6">
-                {children}
-              </ModalBody>
+                <ModalBody className="flex-1 overflow-y-auto px-6 pb-6">
+                  {children}
+                </ModalBody>
 
-              {(footerContent || (props as any).footer) && (
-                <ModalFooter className="flex items-center gap-3 px-6 pb-6 border-t border-zinc-800">
-                  {footerContent}
-                </ModalFooter>
-              )}
+                {(footerContent || (props as any).footer) && (
+                  <ModalFooter className="flex items-center gap-3 px-6 pb-6 border-t border-zinc-800">
+                    {footerContent}
+                  </ModalFooter>
+                )}
+              </div>
             </ModalDialog>
           </ModalContainer>
         </ModalBackdrop>

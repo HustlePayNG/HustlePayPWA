@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppStore } from '../../store';
 
 export interface TabItem {
   /** Unique identifier */
@@ -37,7 +36,7 @@ export interface TabBarProps {
   containerClassName?: string;
 }
 
-const variantStyles: Record<TabBarProps['variant'], string> = {
+const variantStyles: Record<'floating' | 'fixed' | 'inline', string> = {
   floating: 'fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit glass border-0 h-11 rounded-full p-0 flex flex-row flex-nowrap items-center justify-center gap-0 overflow-hidden shadow-lg',
   fixed: 'fixed bottom-0 left-0 right-0 z-30 glass border-t border-zinc-800 h-16 px-2 flex flex-row flex-nowrap items-center justify-around',
   inline: 'flex flex-row flex-nowrap items-center justify-around gap-0',
@@ -56,14 +55,13 @@ export const TabBar = React.forwardRef<HTMLDivElement, TabBarProps>(
       onTabChange,
       variant = 'floating',
       showLabels = true,
-      className = '',
+      className: _className = '',
       containerClassName = '',
     },
     ref
   ) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAppStore();
 
     // Auto-detect active tab from route if not provided
     const currentPath = location.pathname;
@@ -87,11 +85,11 @@ export const TabBar = React.forwardRef<HTMLDivElement, TabBarProps>(
     return (
       <nav
         ref={ref}
-        className={`${variantStyles[variant]} ${containerClassName}`}
+        className={`${variantStyles[variant]} ${containerClassName} ${_className}`}
         role="tablist"
         aria-label="Main navigation"
       >
-        {tabs.map((tab, index) => {
+        {tabs.map((tab) => {
           const isActive = computedActiveTab === tab.id;
           const badgeStyles = tab.badge ? getBadgeStyles(tab.badgeVariant) : '';
 

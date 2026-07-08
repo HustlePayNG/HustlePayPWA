@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { toast } from '@heroui/react';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'default';
+export type ToastType = 'success' | 'danger' | 'warning' | 'info' | 'default';
 
 export interface ToastOptions {
   title?: string;
@@ -19,28 +19,31 @@ export function useToast() {
     message: string,
     options?: ToastOptions
   ) => {
-    const baseOptions = {
-      title: options?.title,
-      description: options?.description ?? message,
-      duration: options?.duration ?? 4000,
-      action: options?.action,
+    const toastMessage = options?.title || message;
+    const herouiOptions = {
+      description: options?.title ? message : options?.description,
+      timeout: options?.duration ?? 4000,
+      actionProps: options?.action ? {
+        children: options.action.label,
+        onPress: options.action.onClick
+      } : undefined
     };
 
     switch (type) {
       case 'success':
-        toast.success(baseOptions);
+        toast.success(toastMessage, herouiOptions);
         break;
-      case 'error':
-        toast.error(baseOptions);
+      case 'danger':
+        toast.danger(toastMessage, herouiOptions);
         break;
       case 'warning':
-        toast.warning(baseOptions);
+        toast.warning(toastMessage, herouiOptions);
         break;
       case 'info':
-        toast.info(baseOptions);
+        toast.info(toastMessage, herouiOptions);
         break;
       default:
-        toast(baseOptions);
+        toast(toastMessage, herouiOptions);
     }
   }, []);
 
@@ -49,7 +52,7 @@ export function useToast() {
   }, [showToast]);
 
   const error = useCallback((message: string, options?: ToastOptions) => {
-    showToast('error', message, options);
+    showToast('danger', message, options);
   }, [showToast]);
 
   const warning = useCallback((message: string, options?: ToastOptions) => {
@@ -60,7 +63,13 @@ export function useToast() {
     showToast('info', message, options);
   }, [showToast]);
 
-  return { toast: showToast, success, error, warning, info };
+  return {
+    showToast,
+    success,
+    error,
+    warning,
+    info,
+  };
 }
 
 export type UseToastReturn = ReturnType<typeof useToast>;

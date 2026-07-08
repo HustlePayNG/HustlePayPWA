@@ -19,13 +19,13 @@ export interface SkeletonProps {
   className?: string;
 }
 
-const animationStyles: Record<SkeletonProps['animation'], string> = {
+const animationStyles: Record<'pulse' | 'wave' | 'none', string> = {
   pulse: 'animate-pulse',
   wave: 'animate-[shimmer_1.5s_infinite]',
   none: '',
 };
 
-const variantDefaults: Record<SkeletonProps['variant'], { width?: string; height?: string; radius?: string }> = {
+const variantDefaults: Record<'text' | 'circular' | 'rectangular' | 'card' | 'avatar' | 'button', { width?: string; height?: string; radius?: string }> = {
   text: { height: '1rem', radius: 'rounded' },
   circular: { width: '3rem', height: '3rem', radius: 'rounded-full' },
   rectangular: { width: '100%', height: '1rem', radius: 'rounded-lg' },

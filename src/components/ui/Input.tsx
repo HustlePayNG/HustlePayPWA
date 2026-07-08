@@ -1,7 +1,8 @@
 import React from 'react';
-import { Input as HeroUIInput, InputProps as HeroUIInputProps } from '@heroui/react';
+import type { InputProps as HeroUIInputProps } from '@heroui/react';
+import { Input as HeroUIInput } from '@heroui/react';
 
-export interface InputProps extends Omit<HeroUIInputProps, 'children'> {
+export interface InputProps extends Omit<HeroUIInputProps, 'children' | 'variant'> {
   /** Label text */
   label?: string;
   /** Error message */
@@ -29,7 +30,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       variant = 'default',
       fullWidth = true,
       className = '',
-      classNames,
       ...props
     },
     ref
@@ -46,7 +46,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       disabled:bg-zinc-900/50 disabled:text-zinc-600
     `;
 
-    const variantStyles: Record<InputProps['variant'], string> = {
+    const variantStyles: Record<'default' | 'search' | 'filled', string> = {
       default: 'border border-zinc-800 bg-zinc-900/50 focus-within:border-brand-500',
       search: 'border border-zinc-800 bg-zinc-900/60 focus-within:border-brand-500',
       filled: 'border border-zinc-800 bg-zinc-900 focus-within:border-brand-500',
@@ -59,16 +59,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && <label className={labelStyles}>{label}</label>}
         <div
           className={`flex items-center gap-2.5 rounded-xl transition-colors ${variantStyles[variant]}`}
-          {...(classNames?.wrapper && { className: classNames.wrapper })}
         >
           {leftIcon && (
             <span className="text-zinc-500 flex-shrink-0">{leftIcon}</span>
           )}
           <HeroUIInput
             ref={ref}
-            classNames={{
-              input: `${inputStyles} ${className}`,
-            }}
+            className={`${inputStyles} ${className}`}
             {...props}
           />
           {rightIcon && (

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { SelectProps as HeroUISelectProps } from '@heroui/react';
 import {
   Select as HeroUISelect,
   SelectTrigger,
@@ -6,7 +7,6 @@ import {
   SelectPopover,
   ListBox,
   ListBoxItem,
-  SelectProps as HeroUISelectProps,
 } from '@heroui/react';
 
 export interface SelectOption {
@@ -16,7 +16,7 @@ export interface SelectOption {
   icon?: React.ReactNode;
 }
 
-export interface SelectProps extends Omit<HeroUISelectProps, 'children'> {
+export interface SelectProps extends Omit<HeroUISelectProps<object>, 'children'> {
   /** Label */
   label?: string;
   /** Error message */
@@ -35,6 +35,10 @@ export interface SelectProps extends Omit<HeroUISelectProps, 'children'> {
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode;
   /** Additional className */
   className?: string;
+  /** Disabled */
+  disabled?: boolean;
+  /** Required */
+  required?: boolean;
 }
 
 export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
@@ -49,7 +53,6 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
       searchable = false,
       renderOption,
       className = '',
-      classNames,
       selectedKey,
       onSelectionChange,
       disabled,
@@ -86,29 +89,25 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
     `;
 
     return (
-      <div ref={ref} className={`${wrapperStyles} ${className}`} {...props}>
+      <div ref={ref} className={`${wrapperStyles} ${className}`}>
         {label && <label className={labelStyles}>{label}{required && <span className="text-red-400 ml-1">*</span>}</label>}
         <HeroUISelect
-          classNames={{
-            trigger: triggerStyles,
-            popover: popoverStyles,
-            listbox: 'outline-none',
-          }}
           selectedKey={selectedKey}
           onSelectionChange={onSelectionChange}
           isDisabled={disabled}
+          placeholder={placeholder}
           {...props}
         >
-          <SelectTrigger>
-            <SelectValue placeholder={placeholder} />
+          <SelectTrigger className={triggerStyles}>
+            <SelectValue />
           </SelectTrigger>
-          <SelectPopover>
+          <SelectPopover className={popoverStyles}>
             <ListBox className="outline-none" autoFocus>
-              {options.map((option) => (
+              {options.map((option: SelectOption) => (
                 <ListBoxItem
                   key={option.value}
                   textValue={option.value}
-                  disabled={option.disabled}
+                  isDisabled={option.disabled}
                   className={itemStyles}
                 >
                   {renderOption

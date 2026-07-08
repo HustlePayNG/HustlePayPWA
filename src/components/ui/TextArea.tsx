@@ -1,7 +1,8 @@
 import React from 'react';
-import { Textarea as HeroUITextarea, TextareaProps as HeroUITextareaProps } from '@heroui/react';
+import type { TextAreaProps as HeroUITextAreaProps } from '@heroui/react';
+import { TextArea as HeroUITextArea } from '@heroui/react';
 
-export interface TextAreaProps extends Omit<HeroUITextareaProps, 'children'> {
+export interface TextAreaProps extends Omit<HeroUITextAreaProps, 'children'> {
   /** Label text */
   label?: string;
   /** Error message */
@@ -29,7 +30,6 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
       fullWidth = true,
       rows = 4,
       className = '',
-      classNames,
       ...props
     },
     ref
@@ -56,12 +56,10 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
       <div className={wrapperStyles}>
         {label && <label className={labelStyles}>{label}</label>}
         <div className="relative">
-          <HeroUITextarea
+          <HeroUITextArea
             ref={ref}
             rows={rows}
-            classNames={{
-              textarea: `${baseTextareaStyles} ${className}`,
-            }}
+            className={`${baseTextareaStyles} ${className}`}
             {...props}
           />
           {(showCount || maxLength) && (

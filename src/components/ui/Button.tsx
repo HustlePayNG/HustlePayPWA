@@ -1,7 +1,8 @@
 import React from 'react';
-import { Button as HeroUIButton, ButtonProps as HeroUIButtonProps, Spinner } from '@heroui/react';
+import type { ButtonProps as HeroUIButtonProps } from '@heroui/react';
+import { Button as HeroUIButton, Spinner } from '@heroui/react';
 
-export interface ButtonProps extends Omit<HeroUIButtonProps, 'children' | 'isLoading'> {
+export interface ButtonProps extends Omit<HeroUIButtonProps, 'children' | 'isLoading' | 'variant' | 'size'> {
   /** Button variant - extends HeroUI variants with custom ones */
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
   /** Button size */
@@ -14,9 +15,13 @@ export interface ButtonProps extends Omit<HeroUIButtonProps, 'children' | 'isLoa
   rightIcon?: React.ReactNode;
   /** Full width */
   fullWidth?: boolean;
+  /** Children node */
+  children?: React.ReactNode;
+  /** Disabled state */
+  disabled?: boolean;
 }
 
-const variantStyles: Record<ButtonProps['variant'], string> = {
+const variantStyles: Record<'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success', string> = {
   primary: 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20',
   secondary: 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700',
   outline: 'border border-zinc-700 bg-transparent hover:bg-zinc-800 text-white',
@@ -25,7 +30,7 @@ const variantStyles: Record<ButtonProps['variant'], string> = {
   success: 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20',
 };
 
-const sizeStyles: Record<ButtonProps['size'], string> = {
+const sizeStyles: Record<'sm' | 'md' | 'lg', string> = {
   sm: 'h-9 px-3 text-xs',
   md: 'h-11 px-4 text-sm',
   lg: 'h-13 px-6 text-base',
@@ -59,13 +64,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <HeroUIButton
         ref={ref}
-        disableAnimation
         className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
         isDisabled={disabled || isLoading}
         {...props}
       >
         {isLoading ? (
-          <Spinner size="sm" color="white" />
+          <Spinner size="sm" color="current" />
         ) : (
           <>
             {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}

@@ -59,8 +59,14 @@ export const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           <SearchNormal1 size={16} color="currentColor" variant="Broken" className="text-zinc-500 shrink-0" />
           <input
             ref={(el) => {
-              if (inputRef) inputRef.current = el;
-              if (ref) (ref as React.MutableRefObject<HTMLInputElement>).current = el;
+              if (inputRef) (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+              if (ref) {
+                if (typeof ref === 'function') {
+                  ref(el);
+                } else {
+                  (ref as React.MutableRefObject<HTMLInputElement | null>).current = el;
+                }
+              }
             }}
             type="text"
             placeholder={placeholder}
@@ -96,7 +102,6 @@ export const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="text-currentColor">
               <path d="M4 5H14M4 9H12M4 13H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            />
             </svg>
           </button>
         )}

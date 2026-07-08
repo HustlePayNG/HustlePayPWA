@@ -27,7 +27,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   iconBg = 'bg-brand-500/15',
   iconColor = 'text-brand-400',
   action,
-  divider = false,
+  divider: _divider = false,
   className = '',
 }) => {
   return (

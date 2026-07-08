@@ -25,7 +25,7 @@ export interface AvatarProps {
   onClick?: () => void;
 }
 
-const sizeStyles: Record<Exclude<AvatarProps['size'], number>, string> = {
+const sizeStyles: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl', string> = {
   xs: 'h-6 w-6 text-[10px]',
   sm: 'h-8 w-8 text-[11px]',
   md: 'h-10 w-10 text-xs',
@@ -34,13 +34,13 @@ const sizeStyles: Record<Exclude<AvatarProps['size'], number>, string> = {
   '2xl': 'h-20 w-20 text-lg',
 };
 
-const shapeStyles: Record<AvatarProps['shape'], string> = {
+const shapeStyles: Record<'circle' | 'square' | 'rounded', string> = {
   circle: 'rounded-full',
   square: 'rounded-none',
   rounded: 'rounded-2xl',
 };
 
-const statusSizeStyles: Record<AvatarProps['size'], string> = {
+const statusSizeStyles: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl', string> = {
   xs: 'h-1.5 w-1.5',
   sm: 'h-2 w-2',
   md: 'h-2.5 w-2.5',
@@ -49,14 +49,14 @@ const statusSizeStyles: Record<AvatarProps['size'], string> = {
   '2xl': 'h-5 w-5',
 };
 
-const statusColorStyles: Record<AvatarProps['status'], string> = {
+const statusColorStyles: Record<'online' | 'busy' | 'away' | 'offline', string> = {
   online: 'bg-success-500',
   busy: 'bg-danger-500',
   away: 'bg-warning-500',
   offline: 'bg-zinc-600',
 };
 
-const statusPositionStyles: Record<AvatarProps['statusPosition'], string> = {
+const statusPositionStyles: Record<'bottom-right' | 'top-right' | 'bottom-left' | 'top-left', string> = {
   'bottom-right': 'bottom-0 right-0',
   'top-right': 'top-0 right-0',
   'bottom-left': 'bottom-0 left-0',
@@ -81,7 +81,7 @@ export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
     },
     ref
   ) => {
-    const sizeClass = typeof size === 'number' ? `h-[${size}px] w-[${size}px]` : sizeStyles[size];
+    const sizeClass = typeof size === 'number' ? `h-[${size}px] w-[${size}px]` : sizeStyles[size as 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'];
     const textSizeClass = typeof size === 'number' ? `text-[${size * 0.35}px]` : sizeClass.replace(/h-\d+ w-\d+ /, '');
 
     const getInitials = (fullName: string) => {
@@ -99,7 +99,7 @@ export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
     const colorIndex = name ? name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % bgColors.length : 0;
     const bgColor = bgColors[colorIndex];
 
-    const statusSize = typeof size === 'number' ? 'h-2 w-2' : statusSizeStyles[size];
+    const statusSize = typeof size === 'number' ? 'h-2 w-2' : statusSizeStyles[size as 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'];
 
     return (
       <div
