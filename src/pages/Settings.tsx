@@ -14,11 +14,39 @@ export const Settings: React.FC = () => {
   const [marketingConsent, setMarketingConsent] = useState(user?.kycStatus ? false : true);
   
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [addressError, setAddressError] = useState('');
 
   if (!user) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    let hasError = false;
+
+    if (!name) {
+      setNameError('Full name is required.');
+      hasError = true;
+    } else {
+      setNameError('');
+    }
+
+    if (!phone) {
+      setPhoneError('Phone number is required.');
+      hasError = true;
+    } else {
+      setPhoneError('');
+    }
+
+    if (!address) {
+      setAddressError('Service delivery location is required.');
+      hasError = true;
+    } else {
+      setAddressError('');
+    }
+
+    if (hasError) return;
+
     setSaving(true);
     setTimeout(() => {
       updateUserProfile({
@@ -50,42 +78,60 @@ export const Settings: React.FC = () => {
 
           <Fieldset.Group className="flex flex-col gap-4 w-full">
             <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Full Name</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <User className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
+              <Label className={`text-xs font-semibold transition-colors ${nameError ? 'text-danger' : 'text-zinc-400'}`}>Full Name</Label>
+              <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-xl bg-zinc-900/50 h-11 transition-all focus-within:border-brand-500 ${nameError ? 'border-danger focus-within:border-danger' : 'border-zinc-800'}`}>
+                <User className={`shrink-0 transition-colors ${nameError ? 'text-danger' : 'text-zinc-500'}`} size={16} color="currentColor" variant="Broken" />
                 <Input
                   type="text"
                   className="w-full bg-transparent text-xs text-white focus:outline-none"
                   value={name}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setName(e.target.value);
+                    if (e.target.value) setNameError('');
+                  }}
                 />
               </div>
+              {nameError && (
+                <span className="text-[10px] text-danger font-semibold text-left">{nameError}</span>
+              )}
             </TextField>
 
             <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Phone Number</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <Call className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
+              <Label className={`text-xs font-semibold transition-colors ${phoneError ? 'text-danger' : 'text-zinc-400'}`}>Phone Number</Label>
+              <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-xl bg-zinc-900/50 h-11 transition-all focus-within:border-brand-500 ${phoneError ? 'border-danger focus-within:border-danger' : 'border-zinc-800'}`}>
+                <Call className={`shrink-0 transition-colors ${phoneError ? 'text-danger' : 'text-zinc-500'}`} size={16} color="currentColor" variant="Broken" />
                 <Input
                   type="tel"
                   className="w-full bg-transparent text-xs text-white focus:outline-none"
                   value={phone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setPhone(e.target.value);
+                    if (e.target.value) setPhoneError('');
+                  }}
                 />
               </div>
+              {phoneError && (
+                <span className="text-[10px] text-danger font-semibold text-left">{phoneError}</span>
+              )}
             </TextField>
 
             <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Service Delivery Location</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <Location className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
+              <Label className={`text-xs font-semibold transition-colors ${addressError ? 'text-danger' : 'text-zinc-400'}`}>Service Delivery Location</Label>
+              <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-xl bg-zinc-900/50 h-11 transition-all focus-within:border-brand-500 ${addressError ? 'border-danger focus-within:border-danger' : 'border-zinc-800'}`}>
+                <Location className={`shrink-0 transition-colors ${addressError ? 'text-danger' : 'text-zinc-500'}`} size={16} color="currentColor" variant="Broken" />
                 <Input
                   type="text"
                   className="w-full bg-transparent text-xs text-white focus:outline-none"
                   value={address}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setAddress(e.target.value);
+                    if (e.target.value) setAddressError('');
+                  }}
                 />
               </div>
+              {addressError && (
+                <span className="text-[10px] text-danger font-semibold text-left">{addressError}</span>
+              )}
             </TextField>
 
             <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-semibold leading-relaxed -mt-1 pl-1">
@@ -124,7 +170,7 @@ export const Settings: React.FC = () => {
           <Button
             type="submit"
             isDisabled={saving}
-            className="w-full flex items-center justify-center font-bold h-11 bg-brand-500 hover:bg-brand-600 rounded-2xl shadow-xl shadow-brand-500/10 text-white transition-all gap-2"
+            className="w-full flex items-center justify-center font-bold h-11 bg-brand-500 hover:bg-brand-600 rounded-2xl text-white transition-all gap-2"
           >
             {saving && <Spinner size="sm" />}
             Save Changes

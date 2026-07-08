@@ -11,6 +11,7 @@ export const EmailVerification: React.FC = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [codeError, setCodeError] = useState('');
   const [timer, setTimer] = useState(60);
 
   useEffect(() => {
@@ -77,29 +78,37 @@ export const EmailVerification: React.FC = () => {
               We sent a verification code to <span className="text-brand-500 font-bold">{user?.email}</span>.
             </p>
 
-            <Card className="glass border-0 shadow-2xl rounded-[32px] p-6 mt-8 bg-zinc-950/40">
+            <Card className="glass border-0 rounded-[32px] p-6 mt-8 bg-zinc-950/40">
               <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }}>
                 <Fieldset>
                   <Fieldset.Legend className="sr-only">Enter Verification Code</Fieldset.Legend>
                   
-                  <Fieldset.Group className="flex gap-2.5 justify-center">
-                    {code.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        id={`digit-${idx}`}
-                        type="text"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleChange(idx, e.target.value)}
-                        className="w-11 h-14 bg-zinc-50/50 border border-zinc-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-zinc-900 rounded-2xl text-center font-black text-lg focus:outline-none transition-all"
-                      />
-                    ))}
+                  <Fieldset.Group className="flex flex-col gap-2.5 items-center justify-center">
+                    <div className="flex gap-2.5 justify-center">
+                      {code.map((digit, idx) => (
+                        <input
+                          key={idx}
+                          id={`digit-${idx}`}
+                          type="text"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => {
+                            handleChange(idx, e.target.value);
+                            if (codeError) setCodeError('');
+                          }}
+                          className={`w-11 h-14 bg-zinc-50/50 border focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-zinc-900 rounded-2xl text-center font-black text-lg focus:outline-none transition-all ${codeError ? 'border-danger focus:border-danger' : 'border-zinc-200'}`}
+                        />
+                      ))}
+                    </div>
+                    {codeError && (
+                      <span className="text-[10px] text-danger font-semibold text-center">{codeError}</span>
+                    )}
                   </Fieldset.Group>
 
                   <Fieldset.Actions className="flex flex-col gap-4 mt-6">
                     <Button
                       type="submit"
-                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
                       isDisabled={loading || code.some(d => d === '')}
                     >
                       {loading && <Spinner size="sm" />}

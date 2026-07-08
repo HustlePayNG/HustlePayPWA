@@ -12,51 +12,62 @@ export const PasswordReset: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const handleRequestCode = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setError('Email address is required.');
+      setEmailError('Email address is required.');
       return;
     }
+    setEmailError('');
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setStep(2);
-      setError('');
     }, 1000);
   };
 
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     if (!code) {
-      setError('Please enter the verification code.');
+      setCodeError('Please enter the verification code.');
       return;
     }
+    setCodeError('');
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setStep(3);
-      setError('');
     }, 1000);
   };
 
   const handleSetPassword = (e: React.FormEvent) => {
     e.preventDefault();
+    let hasError = false;
+
     if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
+      setPasswordError('Password must be at least 6 characters long.');
+      hasError = true;
+    } else {
+      setPasswordError('');
     }
+
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
+      setConfirmPasswordError('Passwords do not match.');
+      hasError = true;
+    } else {
+      setConfirmPasswordError('');
     }
+
+    if (hasError) return;
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setStep(4);
-      setError('');
     }, 1000);
   };
 
@@ -124,7 +135,7 @@ export const PasswordReset: React.FC = () => {
             <h2 className="text-2xl font-black text-zinc-900">Password Updated!</h2>
             <p className="text-zinc-555 text-xs font-light">Your password has been changed successfully.</p>
             <Button
-              className="w-full font-bold mt-4 h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all text-white-force"
+              className="w-full font-bold mt-4 h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all text-white-force"
               onClick={() => navigate('/login')}
             >
               Sign In Now
@@ -133,34 +144,38 @@ export const PasswordReset: React.FC = () => {
         )}
 
         {step < 4 && (
-          <Card className="glass border-0 shadow-2xl rounded-[32px] p-6 text-left mt-8 bg-zinc-950/40">
+          <Card className="glass border-0 rounded-[32px] p-6 text-left mt-8 bg-zinc-950/40">
             {step === 1 && (
               <form onSubmit={handleRequestCode}>
                 <Fieldset>
                   <Fieldset.Legend className="sr-only">Request Reset Code</Fieldset.Legend>
                   <Fieldset.Group>
                     <TextField className="flex flex-col gap-1.5 w-full">
-                      <Label className="text-zinc-500 text-xs font-semibold text-left">Email Address</Label>
-                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                        <Sms className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                      <Label className={`text-xs font-semibold text-left transition-colors ${emailError ? 'text-danger' : 'text-zinc-505'}`}>Email Address</Label>
+                      <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${emailError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                        <Sms className={`shrink-0 mr-1 transition-colors ${emailError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                         <input
                           type="email"
                           placeholder="you@example.com"
                           className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (e.target.value) setEmailError('');
+                          }}
                         />
                       </div>
+                      {emailError && (
+                        <span className="text-[10px] text-danger font-semibold text-left">{emailError}</span>
+                      )}
                     </TextField>
                   </Fieldset.Group>
 
-                  {error && <span className="text-[10px] text-danger font-semibold mt-2 block">{error}</span>}
-                  
                   <Fieldset.Actions className="mt-5">
                     <Button
                       type="submit"
                       isDisabled={loading}
-                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
                     >
                       {loading && <Spinner size="sm" />}
                       Send Verification Code
@@ -176,27 +191,31 @@ export const PasswordReset: React.FC = () => {
                   <Fieldset.Legend className="sr-only">Verify Code</Fieldset.Legend>
                   <Fieldset.Group>
                     <TextField className="flex flex-col gap-1.5 w-full">
-                      <Label className="text-zinc-500 text-xs font-semibold text-left">Verification Code</Label>
-                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                        <Key className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                      <Label className={`text-xs font-semibold text-left transition-colors ${codeError ? 'text-danger' : 'text-zinc-505'}`}>Verification Code</Label>
+                      <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${codeError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                        <Key className={`shrink-0 mr-1 transition-colors ${codeError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                         <input
                           type="text"
                           placeholder="123456"
                           className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={code}
-                          onChange={(e) => setCode(e.target.value)}
+                          onChange={(e) => {
+                            setCode(e.target.value);
+                            if (e.target.value) setCodeError('');
+                          }}
                         />
                       </div>
+                      {codeError && (
+                        <span className="text-[10px] text-danger font-semibold text-left">{codeError}</span>
+                      )}
                     </TextField>
                   </Fieldset.Group>
 
-                  {error && <span className="text-[10px] text-danger font-semibold mt-2 block">{error}</span>}
-                  
                   <Fieldset.Actions className="mt-5">
                     <Button
                       type="submit"
                       isDisabled={loading}
-                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
                     >
                       {loading && <Spinner size="sm" />}
                       Confirm Code
@@ -212,39 +231,49 @@ export const PasswordReset: React.FC = () => {
                   <Fieldset.Legend className="sr-only">Set New Password</Fieldset.Legend>
                   <Fieldset.Group className="flex flex-col gap-5">
                     <TextField className="flex flex-col gap-1.5 w-full">
-                      <Label className="text-zinc-500 text-xs font-semibold text-left">New Password</Label>
-                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
+                      <Label className={`text-xs font-semibold text-left transition-colors ${passwordError ? 'text-danger' : 'text-zinc-505'}`}>New Password</Label>
+                      <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${passwordError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
                         <input
                           type="password"
                           placeholder="••••••••"
                           className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
+                          onChange={(e) => {
+                            setNewPassword(e.target.value);
+                            if (e.target.value) setPasswordError('');
+                          }}
                         />
                       </div>
+                      {passwordError && (
+                        <span className="text-[10px] text-danger font-semibold text-left">{passwordError}</span>
+                      )}
                     </TextField>
 
                     <TextField className="flex flex-col gap-1.5 w-full">
-                      <Label className="text-zinc-500 text-xs font-semibold text-left">Confirm New Password</Label>
-                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
+                      <Label className={`text-xs font-semibold text-left transition-colors ${confirmPasswordError ? 'text-danger' : 'text-zinc-505'}`}>Confirm New Password</Label>
+                      <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${confirmPasswordError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
                         <input
                           type="password"
                           placeholder="••••••••"
                           className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            if (e.target.value) setConfirmPasswordError('');
+                          }}
                         />
                       </div>
+                      {confirmPasswordError && (
+                        <span className="text-[10px] text-danger font-semibold text-left">{confirmPasswordError}</span>
+                      )}
                     </TextField>
                   </Fieldset.Group>
 
-                  {error && <span className="text-[10px] text-danger font-semibold mt-2 block">{error}</span>}
-                  
                   <Fieldset.Actions className="mt-5">
                     <Button
                       type="submit"
                       isDisabled={loading}
-                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
                     >
                       {loading && <Spinner size="sm" />}
                       Update Password

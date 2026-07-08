@@ -14,13 +14,29 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tempRole, setTempRole] = useState<'seeker' | 'artisan'>('seeker');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    let hasError = false;
+    
     if (!email) {
-      setError('Please enter your email.');
-      return;
+      setEmailError('Please enter your email.');
+      hasError = true;
+    } else {
+      setEmailError('');
     }
+
+    if (!password) {
+      setPasswordError('Please enter your password.');
+      hasError = true;
+    } else {
+      setPasswordError('');
+    }
+
+    if (hasError) return;
+
     setLoading(true);
     setError('');
 
@@ -56,7 +72,7 @@ export const Login: React.FC = () => {
       </div>
 
       <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="glass border-0 shadow-2xl rounded-[32px] p-6 text-left bg-zinc-950/40">
+        <Card className="glass border-0 rounded-[32px] p-6 text-left bg-zinc-950/40">
           <form onSubmit={handleSubmit}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Sign In Credentials</Fieldset.Legend>
@@ -77,34 +93,46 @@ export const Login: React.FC = () => {
                 </div>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Email Address</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Sms className="text-zinc-450 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                  <Label className={`text-xs font-semibold text-left transition-colors ${emailError ? 'text-danger' : 'text-zinc-505'}`}>Email Address</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${emailError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <Sms className={`shrink-0 mr-1 transition-colors ${emailError ? 'text-danger' : 'text-zinc-450'}`} size={18} color="currentColor" variant="Broken" />
                     <input
                       type="email"
                       placeholder="you@example.com"
                       className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (e.target.value) setEmailError('');
+                      }}
                     />
                   </div>
+                  {emailError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{emailError}</span>
+                  )}
                 </TextField>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Password</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Lock className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                  <Label className={`text-xs font-semibold text-left transition-colors ${passwordError ? 'text-danger' : 'text-zinc-505'}`}>Password</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${passwordError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <Lock className={`shrink-0 mr-1 transition-colors ${passwordError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (e.target.value) setPasswordError('');
+                      }}
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none text-zinc-400 hover:text-zinc-650 shrink-0">
                       {showPassword ? <EyeSlash size={18} color="currentColor" variant="Broken" /> : <Eye size={18} color="currentColor" variant="Broken" />}
                     </button>
                   </div>
+                  {passwordError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{passwordError}</span>
+                  )}
                   <div className="flex justify-end text-[10px] mt-0.5">
                     <Link to="/password-reset" className="text-brand-500 hover:text-brand-600 font-semibold hover:underline">Forgot password?</Link>
                   </div>
@@ -119,7 +147,7 @@ export const Login: React.FC = () => {
                 <Button
                   type="submit"
                   isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
                 >
                   {loading && <Spinner size="sm" />}
                   <span>Sign In</span>

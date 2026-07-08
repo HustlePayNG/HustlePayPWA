@@ -1,208 +1,368 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockDb, type ArtisanProfile, type ServiceCategory } from '../services/mockDb';
-import { SearchNormal1, Star, Location, Setting4, Flash } from 'iconsax-react';
-import { Input, Button } from '@heroui/react';
+import { useAppStore } from '../store';
+import { mockDb, type ArtisanProfile } from '../services/mockDb';
+import {
+  SearchNormal1, Setting4, Star, Location, CloseCircle,
+  Heart, MessageText, Flash
+} from 'iconsax-react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
+import { Requests } from './Requests';
 
+// ── Greeting helpers ──────────────────────────────────────────────
+const getGreeting = (): string => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const greetingSubtitles = [
+  'Ready to get something done today?',
+  'Find trusted professionals near you.',
+  'Your next great hire is a tap away.',
+  'Quality service, right at your door.',
+];
+
+// ── Filters ───────────────────────────────────────────────────────
+const RATING_OPTIONS = [4.0, 4.5, 4.8];
+const DISTANCE_OPTIONS = [2, 5, 10];
+
+// ── Component ─────────────────────────────────────────────────────
 export const SeekerHome: React.FC = () => {
   const navigate = useNavigate();
-  
-  const [categories, setCategories] = useState<ServiceCategory[]>([]);
-  const [artisans, setArtisans] = useState<ArtisanProfile[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Filter settings
+  const { user } = useAppStore();
+
+  const firstName = user?.fullName?.split(' ')[0] ?? 'there';
+  const subtitle = greetingSubtitles[new Date().getMinutes() % greetingSubtitles.length];
+
+  const [recommended, setRecommended] = useState<ArtisanProfile[]>([]);
+  const [query, setQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [maxDistance, setMaxDistance] = useState<number | undefined>(undefined);
 
+  // Embla — peek of next card on the right
+  const autoplay = Autoplay({ delay: 3500, stopOnInteraction: true });
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, align: 'start', containScroll: false },
+    [autoplay]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
   useEffect(() => {
-    setCategories(mockDb.getServiceCategories());
-    loadArtisans();
-  }, [selectedCategory, searchQuery, minRating, maxDistance]);
+    if (!emblaApi) return;
+    emblaApi.on('select', onSelect);
+    onSelect();
+  }, [emblaApi, onSelect]);
 
-  const loadArtisans = () => {
-    const list = mockDb.getArtisans(
-      selectedCategory || undefined,
-      searchQuery,
-      { minRating, maxDistance }
-    );
-    setArtisans(list);
-  };
-
-  const handleCategorySelect = (catId: string) => {
-    if (selectedCategory === catId) {
-      setSelectedCategory(null);
-    } else {
-      setSelectedCategory(catId);
-    }
-  };
+  useEffect(() => {
+    const all = mockDb.getArtisans(undefined, query, { minRating, maxDistance });
+    const sorted = [...all].sort((a, b) => b.ratingAverage - a.ratingAverage);
+    setRecommended(sorted.slice(0, 8));
+  }, [query, minRating, maxDistance]);
 
   const clearFilters = () => {
     setMinRating(undefined);
     setMaxDistance(undefined);
-    setSelectedCategory(null);
-    setSearchQuery('');
+    setQuery('');
     setShowFilters(false);
   };
 
+  const hasActiveFilters = minRating !== undefined || maxDistance !== undefined;
+
+  // Fake engagement counts seeded from artisan id for variety
+  const fakeCount = (id: string, base: number) =>
+    base + (id.charCodeAt(id.length - 1) % 50);
+
   return (
-    <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-950 animate-in fade-in">
-      
-      {/* Welcome Banner */}
-      <div className="text-left mb-6 flex justify-between items-center">
-        <div>
-          <span className="text-xs text-brand-400 uppercase tracking-widest font-bold flex items-center gap-1">
-            <Flash size={12} color="currentColor" variant="Broken" /> Personalized Picks
-          </span>
-          <h2 className="text-2xl font-extrabold text-white mt-0.5">Find Trusted Artisans</h2>
-        </div>
+    <div className="flex-1 flex flex-col bg-zinc-950 text-left animate-in fade-in pb-20">
+
+      {/* ── Greeting ─────────────────────────────────────────────── */}
+      <div className="px-5 pt-6 pb-4">
+        <p className="text-[11px] text-brand-400 uppercase tracking-widest font-bold mb-0.5">
+          {getGreeting()}, {firstName} 👋
+        </p>
+        <h1 className="text-2xl font-extrabold text-white leading-tight">{subtitle}</h1>
       </div>
 
-      {/* Search and Filters Section */}
-      <div className="flex gap-2 mb-6 items-center">
-        <div className="flex-1 flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 transition-colors h-11">
-          <SearchNormal1 size={18} color="currentColor" variant="Broken" className="text-zinc-500 shrink-0" />
-          <Input
-            type="text"
-            placeholder="Search plumbing, wiring, cleaning..."
-            className="w-full bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* ── Search + Filter ──────────────────────────────────────── */}
+      <div className="px-5 mb-5">
+        <div className="flex gap-2 items-center">
+          <div className="flex-1 flex items-center gap-2.5 px-3.5 h-11 border border-zinc-800 rounded-2xl bg-zinc-900/60 focus-within:border-brand-500/70 transition-colors">
+            <SearchNormal1 size={16} color="currentColor" variant="Broken" className="text-zinc-500 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search plumbing, wiring, cleaning…"
+              className="flex-1 bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+            {query && (
+              <button onClick={() => setQuery('')} className="text-zinc-500 hover:text-white transition-colors">
+                <CloseCircle size={14} color="currentColor" variant="Broken" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${
+              showFilters || hasActiveFilters
+                ? 'bg-brand-500 border-brand-400 text-white'
+                : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Setting4 size={18} color="currentColor" variant="Broken" />
+          </button>
         </div>
-        
-        <Button 
-          className={`h-11 w-11 flex items-center justify-center border border-zinc-800 rounded-xl transition-all ${showFilters ? 'bg-brand-500 border-brand-400 text-white' : 'text-zinc-300 hover:bg-zinc-900 bg-transparent'}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Setting4 size={18} color="currentColor" variant="Broken" />
-        </Button>
-      </div>
 
-      {/* Expanded Filters Drawer */}
-      {showFilters && (
-        <div className="glass border border-zinc-800/80 p-4 mb-6 rounded-2xl animate-in slide-in-from-top duration-150">
-          <div className="p-0 text-left flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-xs text-white">Search Filters</span>
-              <Button 
-                onClick={clearFilters} 
-                className="text-[10px] text-brand-400 font-bold hover:underline p-0 h-auto min-w-0 bg-transparent inline"
-              >
-                Clear All
-              </Button>
+        {showFilters && (
+          <div className="mt-3 glass border border-zinc-800/80 rounded-2xl p-4 animate-in slide-in-from-top-2 duration-150">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xs font-bold text-white">Filters</span>
+              {hasActiveFilters && (
+                <button onClick={clearFilters} className="text-[10px] text-brand-400 font-bold hover:underline">
+                  Clear all
+                </button>
+              )}
             </div>
-            
-            {/* Rating Filter */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Minimum Rating</span>
+            <div className="mb-3">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Min. Rating</p>
               <div className="flex gap-2">
-                {[4.0, 4.5, 4.8].map(stars => (
-                  <Button 
-                    key={stars}
-                    size="sm"
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${minRating === stars ? 'bg-brand-500 border-brand-400 text-white' : 'glass border-zinc-800 text-zinc-400 bg-transparent'}`}
-                    onClick={() => setMinRating(stars)}
-                  >
-                    ★ {stars}+
-                  </Button>
+                {RATING_OPTIONS.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setMinRating(minRating === r ? undefined : r)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      minRating === r ? 'bg-brand-500 border-brand-400 text-white' : 'border-zinc-800 text-zinc-400 bg-transparent'
+                    }`}
+                  >★ {r}+</button>
                 ))}
               </div>
             </div>
-
-            {/* Distance Filter */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Maximum Distance</span>
+            <div>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Max. Distance</p>
               <div className="flex gap-2">
-                {[2, 5, 10].map(dist => (
-                  <Button 
-                    key={dist}
-                    size="sm"
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${maxDistance === dist ? 'bg-brand-500 border-brand-400 text-white' : 'glass border-zinc-800 text-zinc-400 bg-transparent'}`}
-                    onClick={() => setMaxDistance(dist)}
-                  >
-                    Within {dist}km
-                  </Button>
+                {DISTANCE_OPTIONS.map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setMaxDistance(maxDistance === d ? undefined : d)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      maxDistance === d ? 'bg-brand-500 border-brand-400 text-white' : 'border-zinc-800 text-zinc-400 bg-transparent'
+                    }`}
+                  >{d} km</button>
                 ))}
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Categories Row */}
-      <div className="text-left mb-6">
-        <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-wider mb-3">Service Categories</h3>
-        <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
-          {categories.map(cat => {
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <Button
-                key={cat.id}
-                onClick={() => handleCategorySelect(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all h-9 ${isSelected ? 'bg-brand-500 border-brand-400 text-white scale-105 shadow-md shadow-brand-500/20' : 'glass border-zinc-850 text-zinc-300 hover:border-zinc-700 bg-transparent'}`}
-              >
-                <span>{cat.name}</span>
-              </Button>
-            );
-          })}
-        </div>
+        )}
       </div>
 
-      {/* Artisans List */}
-      <div className="text-left flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-wider">Nearby Professionals</h3>
-          <span className="text-[10px] text-zinc-500 font-semibold">{artisans.length} found</span>
+
+      {/* ── Recommended For You ──────────────────────────────────── */}
+      <div className="mb-6">
+
+        {/* Section header */}
+        <div className="flex items-center justify-between px-5 mb-4">
+          <div className="flex items-center gap-2">
+            {/* Animated spark icon */}
+            <div className="h-7 w-7 rounded-full bg-brand-500/15 flex items-center justify-center">
+              <Star size={14} color="currentColor" variant="Broken" className="text-brand-400 animate-pulse" />
+            </div>
+            <span className="text-sm font-bold text-white">Recommended for You</span>
+          </div>
+          <button
+            onClick={() => navigate('/discover')}
+            className="text-xs text-brand-400 font-semibold bg-brand-500/10 px-3 py-1 rounded-full hover:bg-brand-500/20 transition-colors"
+          >
+            See all
+          </button>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {artisans.length === 0 ? (
-            <div className="glass border border-zinc-900 rounded-3xl p-8 text-center text-zinc-500 text-xs">
-              No artisans found matching your query/filters.
-            </div>
-          ) : (
-            artisans.map(art => (
-              <div 
-                key={art.id} 
-                className="glass border border-zinc-850 hover:border-zinc-750 transition-all rounded-[28px] cursor-pointer p-4 flex flex-row items-center gap-4"
-                onClick={() => navigate(`/artisan/${art.id}`)}
+        {/* Embla viewport — peek ~15% of next card */}
+        <div className="overflow-hidden pl-5" ref={emblaRef}>
+          <div className="flex" style={{ gap: '12px' }}>
+            {recommended.map((art, idx) => (
+              <div
+                key={art.id}
+                className="flex-[0_0_78%] flex flex-col"
               >
-                <img src={art.avatarUrl} className="h-16 w-16 border-2 border-brand-500/20 rounded-2xl object-cover shrink-0" alt="" />
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 justify-between">
-                    <h4 className="font-extrabold text-sm text-white truncate">{art.fullName}</h4>
-                    <div className="flex items-center gap-0.5 text-warning-400 text-xs font-bold shrink-0">
-                      <Star size={12} color="currentColor" variant="Broken" className="fill-warning-400 text-warning-400" />
-                      <span>{art.ratingAverage.toFixed(1)}</span>
-                    </div>
+                {/* ── Card header: avatar + name (above image) ── */}
+                <div className="flex items-center gap-2 mb-2 px-0.5">
+                  <img
+                    src={art.avatarUrl}
+                    alt={art.fullName}
+                    className="h-7 w-7 rounded-full object-cover ring-1 ring-brand-500/30"
+                  />
+                  <span className="text-xs font-semibold text-zinc-200 truncate">{art.businessName}</span>
+                  {idx === 0 && (
+                    <span className="ml-auto text-[9px] font-bold bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full shrink-0">
+                      Top Pick
+                    </span>
+                  )}
+                </div>
+
+                {/* ── Image card ── */}
+                <div
+                  className="relative rounded-[22px] overflow-hidden cursor-pointer group"
+                  style={{ height: '320px' }}
+                  onClick={() => navigate(`/artisan/${art.id}`)}
+                >
+                  {/* Portrait image */}
+                  <img
+                    src={art.avatarUrl}
+                    alt={art.fullName}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+
+                  {/* Flat black tint — ensures white text always readable regardless of image */}
+                  <div className="absolute inset-0 bg-black/30" />
+                  {/* Gradient deepens toward bottom for caption legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+                  {/* ── Bottom-left: caption + @handle ── */}
+                  <div className="absolute bottom-4 left-4 right-14 pr-1">
+                    <p
+                      className="text-xs font-semibold leading-snug line-clamp-2"
+                      style={{ color: 'white' }}
+                    >
+                      {art.bio}
+                    </p>
+                    <span
+                      className="text-[10px] font-bold mt-0.5 block"
+                      style={{ color: 'rgba(255,255,255,0.75)' }}
+                    >
+                      @{art.businessName.toLowerCase().replace(/\s+/g, '')}
+                    </span>
                   </div>
-                  
-                  <span className="text-[11px] text-brand-300 font-bold block truncate mt-0.5">
-                    {art.businessName}
-                  </span>
 
-                  <p className="text-xs text-zinc-400 truncate mt-1 leading-relaxed font-light">
-                    {art.bio}
-                  </p>
-
-                  <div className="flex items-center justify-between mt-3 text-[10px] text-zinc-500">
-                    <div className="flex items-center gap-1 text-zinc-400 font-semibold">
-                      <Location size={10} color="currentColor" variant="Broken" className="text-brand-400" />
-                      <span>{art.distanceKm} km away</span>
+                  {/* ── Bottom-right: stats stack ── */}
+                  <div className="absolute bottom-3 right-3 flex flex-col items-center gap-3">
+                    {/* Rating */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                        <Star size={15} color="white" variant="Broken" />
+                      </div>
+                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.ratingAverage.toFixed(1)}</span>
                     </div>
-                    <div className="font-bold text-white bg-zinc-800/80 px-2.5 py-1 rounded-lg">
-                      Call-out: ₦{art.pricing.calloutFee.toLocaleString()}
+
+                    {/* Reviews */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                        <MessageText size={15} color="white" variant="Broken" />
+                      </div>
+                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.ratingCount}</span>
+                    </div>
+
+                    {/* Saves/Hearts */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                        <Heart size={15} color="white" variant="Broken" />
+                      </div>
+                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{fakeCount(art.id, 200)}</span>
+                    </div>
+
+                    {/* Distance */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                        <Location size={15} color="white" variant="Broken" />
+                      </div>
+                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.distanceKm}km</span>
                     </div>
                   </div>
                 </div>
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
+
+        {/* Dot indicators */}
+        <div className="flex justify-center gap-1.5 mt-4">
+          {recommended.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => emblaApi?.scrollTo(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === selectedIndex ? 'bg-brand-400 w-5' : 'bg-zinc-700 w-1.5'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Top Categories ──────────────────────────────────────── */}
+      {(() => {
+        const cats = mockDb.getServiceCategories().slice(0, 4);
+        return (
+          <div className="px-5 mb-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-full bg-brand-500/15 flex items-center justify-center">
+                  <Flash size={14} color="currentColor" variant="Broken" className="text-brand-400" />
+                </div>
+                <span className="text-sm font-bold" style={{ color: 'white' }}>Top Categories</span>
+              </div>
+              <button
+                onClick={() => navigate('/discover')}
+                className="text-xs text-brand-400 font-semibold bg-brand-500/10 px-3 py-1 rounded-full hover:bg-brand-500/20 transition-colors"
+              >
+                See all
+              </button>
+            </div>
+
+            {/* 2×2 Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {cats.map(cat => {
+                const catArtisans = mockDb.getArtisans(cat.id, '', {});
+                const preview = catArtisans.slice(0, 2);
+                const count = catArtisans.length;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => navigate(`/discover?cat=${cat.id}`)}
+                    className="bg-zinc-50 border border-zinc-200/60 rounded-[22px] p-4 text-left hover:border-brand-500/30 transition-all active:scale-95"
+                  >
+                    {/* Category name — no emoji */}
+                    <p className="text-sm font-extrabold mb-3 leading-tight" style={{ color: '#09090b' }}>
+                      {cat.name}
+                    </p>
+
+                    {/* Overlapping avatars + count badge */}
+                    <div className="flex items-center">
+                      {preview.map((art, i) => (
+                        <img
+                          key={art.id}
+                          src={art.avatarUrl}
+                          alt={art.fullName}
+                          className="h-11 w-11 rounded-full object-cover ring-2 ring-zinc-50"
+                          style={{ marginLeft: i === 0 ? 0 : -14, zIndex: i + 1, position: 'relative' }}
+                        />
+                      ))}
+                      <div
+                        className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center ring-2 ring-zinc-50"
+                        style={{ marginLeft: preview.length > 0 ? -14 : 0, zIndex: preview.length + 1, position: 'relative' }}
+                      >
+                        <span className="text-[10px] font-extrabold" style={{ color: 'white' }}>+{count}</span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── My Requests ──────────────────────────────────────────── */}
+      <div className="px-5 flex-1 flex flex-col">
+        <Requests />
       </div>
     </div>
   );

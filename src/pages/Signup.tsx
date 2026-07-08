@@ -21,20 +21,53 @@ export const Signup: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [addressError, setAddressError] = useState('');
+  const [consentError, setConsentError] = useState('');
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    let hasError = false;
 
-    if (!name || !email || !phone || !address) {
-      setError('Please fill in all details');
-      return;
+    if (!name) {
+      setNameError('Please enter your full name.');
+      hasError = true;
+    } else {
+      setNameError('');
+    }
+
+    if (!email) {
+      setEmailError('Please enter your email address.');
+      hasError = true;
+    } else {
+      setEmailError('');
+    }
+
+    if (!phone) {
+      setPhoneError('Please enter your phone number.');
+      hasError = true;
+    } else {
+      setPhoneError('');
+    }
+
+    if (!address) {
+      setAddressError('Please enter your home address.');
+      hasError = true;
+    } else {
+      setAddressError('');
     }
 
     if (!termsConsent) {
-      setError('You must accept the privacy policy terms to register');
-      return;
+      setConsentError('You must accept the privacy policy terms to register');
+      hasError = true;
+    } else {
+      setConsentError('');
     }
+
+    if (hasError) return;
 
     setLoading(true);
 
@@ -78,7 +111,7 @@ export const Signup: React.FC = () => {
       </div>
 
       <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="glass border-0 shadow-2xl rounded-[32px] p-6 text-left bg-zinc-950/40">
+        <Card className="glass border-0 rounded-[32px] p-6 text-left bg-zinc-950/40">
           <form onSubmit={handleSignup}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Create Account details</Fieldset.Legend>
@@ -98,75 +131,105 @@ export const Signup: React.FC = () => {
                 </div>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Full Name</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <UserIcon className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                  <Label className={`text-xs font-semibold text-left transition-colors ${nameError ? 'text-danger' : 'text-zinc-505'}`}>Full Name</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${nameError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <UserIcon className={`shrink-0 mr-1 transition-colors ${nameError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                     <input
                       type="text"
                       placeholder="John Doe"
                       className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (e.target.value) setNameError('');
+                      }}
                     />
                   </div>
+                  {nameError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{nameError}</span>
+                  )}
                 </TextField>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Email Address</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Sms className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                  <Label className={`text-xs font-semibold text-left transition-colors ${emailError ? 'text-danger' : 'text-zinc-505'}`}>Email Address</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${emailError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <Sms className={`shrink-0 mr-1 transition-colors ${emailError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                     <input
                       type="email"
                       placeholder="you@example.com"
                       className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (e.target.value) setEmailError('');
+                      }}
                     />
                   </div>
+                  {emailError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{emailError}</span>
+                  )}
                 </TextField>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Phone Number</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Call className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                  <Label className={`text-xs font-semibold text-left transition-colors ${phoneError ? 'text-danger' : 'text-zinc-505'}`}>Phone Number</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${phoneError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <Call className={`shrink-0 mr-1 transition-colors ${phoneError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                     <input
                       type="tel"
                       placeholder="+234 800 000 0000"
                       className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (e.target.value) setPhoneError('');
+                      }}
                     />
                   </div>
+                  {phoneError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{phoneError}</span>
+                  )}
                 </TextField>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Home Address</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Location className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                  <Label className={`text-xs font-semibold text-left transition-colors ${addressError ? 'text-danger' : 'text-zinc-505'}`}>Home Address</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${addressError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <Location className={`shrink-0 mr-1 transition-colors ${addressError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
                     <input
                       type="text"
                       placeholder="Street address, City, State"
                       className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                        if (e.target.value) setAddressError('');
+                      }}
                     />
                   </div>
+                  {addressError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{addressError}</span>
+                  )}
                 </TextField>
 
                 {/* NDPR compliance unbundled consent options (GEN-7) */}
                 <div className="flex flex-col gap-3.5 mt-2">
                   <Checkbox
                     isSelected={termsConsent}
-                    onChange={setTermsConsent}
-                    className="text-zinc-500 text-xs leading-relaxed cursor-pointer select-none text-left"
+                    onChange={(val) => {
+                      setTermsConsent(val);
+                      if (val) setConsentError('');
+                    }}
+                    className="text-zinc-500 text-xs leading-relaxed cursor-pointer select-none text-left text-zinc-505"
                   >
                     I consent to the collection, processing, and storage of my personal details (N NIN, ID, Address) in accordance with the HustlePay Privacy Policy. (Required)
                   </Checkbox>
+                  {consentError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{consentError}</span>
+                  )}
                   
                   <Checkbox
                     isSelected={marketingConsent}
                     onChange={setMarketingConsent}
-                    className="text-zinc-500 text-xs leading-relaxed cursor-pointer select-none text-left"
+                    className="text-zinc-500 text-xs leading-relaxed cursor-pointer select-none text-left text-zinc-555"
                   >
                     Opt-in to receiving marketing and promotional newsletters. (Optional)
                   </Checkbox>
@@ -181,7 +244,7 @@ export const Signup: React.FC = () => {
                 <Button
                   type="submit"
                   isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
                 >
                   {loading && <Spinner size="sm" />}
                   <span>Sign Up</span>

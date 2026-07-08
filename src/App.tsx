@@ -8,6 +8,7 @@ import { ToastProvider } from '@heroui/react';
 import MobileFrame from './components/MobileFrame';
 import AppLayout from './components/AppLayout';
 import ReloadPrompt from './components/ReloadPrompt';
+import InstallPWA from './components/InstallPWA';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -34,6 +35,10 @@ import Chat from './pages/Chat';
 import Settings from './pages/Settings';
 import Help from './pages/Help';
 import IntroOnboarding from './pages/IntroOnboarding';
+import More from './pages/More';
+import Discover from './pages/Discover';
+import Messages from './pages/Messages';
+import NotFound from './pages/NotFound';
 
 // Route Guard
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -230,13 +235,48 @@ export const App: React.FC = () => {
               }
             />
 
-            {/* Fallback to Home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="/more"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <More />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/discover"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <Discover />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/messages"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <Messages />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Fallback to 404 */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </MobileFrame>
 
         {/* PWA Update Prompter */}
         <ReloadPrompt />
+        {/* PWA Downloader Prompt */}
+        <InstallPWA />
       </BrowserRouter>
     </>
   );

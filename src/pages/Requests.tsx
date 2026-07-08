@@ -142,13 +142,10 @@ export const Requests: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-950 text-left animate-in fade-in pb-20">
-      <h2 className="text-2xl font-extrabold text-white mb-2">My Requests</h2>
-      <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
-        Track your active bookings, view details, pay service balances, and rate artisans.
-      </p>
-
-      <div className="flex-1 flex flex-col gap-4">
+    <div className="flex flex-col text-left w-full">
+      <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-wider mb-4">My Service Requests</h3>
+      
+      <div className="flex flex-col gap-4">
         {bookings.length === 0 ? (
           <div className="glass border border-zinc-900 rounded-3xl p-12 text-center text-zinc-500 text-xs">
             No booking requests made yet. Browse the home tab to hire artisans.

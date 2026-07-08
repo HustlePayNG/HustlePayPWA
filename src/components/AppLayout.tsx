@@ -3,11 +3,52 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb } from '../services/mockDb';
 import { 
-  Menu, Notification, Home, Card, Briefcase, Clock, 
-  Setting, Logout, Danger, InfoCircle, 
-  CloseCircle, ArrowRight2, Refresh
+  Home, SearchNormal1, MessageText, NotificationBing, CloseCircle
 } from 'iconsax-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
 // Standard layout
+
+interface TabButtonProps {
+  isActive: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, icon, label }) => {
+  return (
+    <button
+      onClick={onClick}
+      className="focus:outline-none cursor-pointer"
+    >
+      <motion.div
+        layout
+        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        className={`flex items-center gap-1.5 h-10 rounded-full transition-colors duration-300 ${
+          isActive
+            ? 'bg-brand-500 text-white px-4 font-bold scale-105 text-white-force'
+            : 'text-zinc-500 hover:text-zinc-300 px-3'
+        }`}
+      >
+        {icon}
+        <AnimatePresence initial={false}>
+          {isActive && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-[11px] overflow-hidden whitespace-nowrap"
+            >
+              {label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </button>
+  );
+};
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,9 +57,8 @@ interface AppLayoutProps {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, activeMode, switchMode, logout, unreadCount, refreshNotifications } = useAppStore();
+  const { user, activeMode, unreadCount, refreshNotifications } = useAppStore();
   
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
@@ -31,23 +71,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const handleNav = (path: string) => {
     navigate(path);
-    setIsSidebarOpen(false);
   };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const getActiveTab = () => {
     const path = location.pathname;
     if (path === '/' || path.startsWith('/home')) return 'home';
-    if (path.startsWith('/payment') || path.startsWith('/wallet')) return 'payment';
-    if (path.startsWith('/requests') || path.startsWith('/bookings')) return 'requests';
-    if (path.startsWith('/history')) return 'history';
-    return 'more';
+    if (path.startsWith('/discover')) return 'discover';
+    if (path.startsWith('/messages') || path.startsWith('/chat')) return 'messages';
+    return 'me';
   };
 
   const currentTab = getActiveTab();
@@ -64,21 +95,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       
       {/* Top Header */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-4 h-16 glass border-b border-zinc-800">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={toggleSidebar} 
-            className="p-2 hover:bg-zinc-800/50 rounded-xl transition-colors"
-            aria-label="Toggle Sidebar"
-          >
-            <Menu size={22} color="currentColor" variant="Broken" className="text-zinc-200" />
-          </button>
-          <span className="font-extrabold text-lg text-white tracking-wide flex items-center gap-1.5">
-            <span className="text-brand-400">Hustle</span>
-            <span>Pay</span>
-            <span className="text-[10px] bg-brand-500/20 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
-              {activeMode}
-            </span>
-          </span>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleNav('/')}>
+          <img src="/logo.png" className="h-8 w-auto" alt="HustlePay Logo" />
         </div>
 
         {/* Action icons */}
@@ -91,20 +109,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             }}
             className="p-2 hover:bg-zinc-800/50 rounded-xl transition-colors relative"
           >
-            <Notification size={20} color="currentColor" variant="Broken" className="text-zinc-200" />
+            <NotificationBing size={20} color="currentColor" variant="Broken" className="text-zinc-200" />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-bold">
                 {unreadCount}
               </span>
             )}
           </button>
-          
-          <img 
-            src={user.avatarUrl} 
-            className="h-8 w-8 rounded-xl object-cover cursor-pointer border-2 border-brand-500/30"
-            onClick={() => handleNav('/settings')} 
-            alt=""
-          />
         </div>
       </header>
 
@@ -140,172 +151,41 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      {/* Collapsible Sidebar (GEN-2) */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Overlay */}
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={toggleSidebar}
-          ></div>
-          
-          {/* Sidebar Drawer */}
-          <div className="relative w-80 max-w-[85%] bg-zinc-950 border-r border-zinc-800 flex flex-col h-full z-50 animate-in slide-in-from-left duration-200">
-            {/* Header info */}
-            <div className="p-5 border-b border-zinc-800 flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <img src={user.avatarUrl} className="h-10 w-10 rounded-xl object-cover border-2 border-brand-500/50" alt="" />
-                <div className="text-left">
-                  <div className="font-bold text-white text-sm truncate w-40">{user.fullName}</div>
-                  <div className="text-xs text-zinc-400 capitalize">{activeMode} Profile</div>
-                </div>
-              </div>
-              <button onClick={toggleSidebar} className="p-1 hover:bg-zinc-800 rounded-lg">
-                <CloseCircle size={18} color="currentColor" variant="Broken" className="text-zinc-400" />
-              </button>
-            </div>
-
-            {/* Sidebar Links */}
-            <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1 text-left">
-              <button 
-                onClick={() => handleNav('/settings')} 
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-900 transition-colors text-zinc-200 text-sm font-semibold"
-              >
-                <Setting size={18} color="currentColor" variant="Broken" className="text-zinc-400" />
-                <span>Account Settings</span>
-              </button>
-              
-              <button 
-                onClick={() => handleNav('/wallet')} 
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-900 transition-colors text-zinc-200 text-sm font-semibold"
-              >
-                <Card size={18} color="currentColor" variant="Broken" className="text-zinc-400" />
-                <span>My Wallet</span>
-              </button>
-
-              <button 
-                onClick={() => handleNav('/disputes')} 
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-900 transition-colors text-zinc-200 text-sm font-semibold"
-              >
-                <Danger size={18} color="currentColor" variant="Broken" className="text-zinc-400" />
-                <span>Disputes</span>
-              </button>
-
-              <button 
-                onClick={() => handleNav('/help')} 
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-900 transition-colors text-zinc-200 text-sm font-semibold"
-              >
-                <InfoCircle size={18} color="currentColor" variant="Broken" className="text-zinc-400" />
-                <span>Help & Support</span>
-              </button>
-
-              <div className="h-px bg-zinc-800 my-2"></div>
-
-              {/* Mode switching button (GEN-1) */}
-              <button 
-                onClick={() => {
-                  switchMode();
-                  setIsSidebarOpen(false);
-                  navigate('/');
-                }}
-                className="flex items-center justify-between px-4 py-3 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 text-brand-300 text-sm font-bold transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <Refresh size={18} color="currentColor" variant="Broken" className="animate-spin-slow" />
-                  <span>Switch to {activeMode === 'seeker' ? 'Artisan' : 'Seeker'}</span>
-                </div>
-                <ArrowRight2 size={16} color="currentColor" variant="Broken" />
-              </button>
-            </div>
-
-            {/* Logout at bottom */}
-            <div className="p-4 border-t border-zinc-800 text-left">
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl hover:bg-red-500/10 text-red-400 text-xs font-semibold transition-colors"
-              >
-                <Logout size={16} color="currentColor" variant="Broken" />
-                <span>Log Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Bottom Navigation Bar */}
       {!isArtisanPending && (
-        <nav className="fixed bottom-0 left-0 right-0 z-30 lg:absolute glass border-t border-zinc-800 h-18 px-4 flex items-center justify-around">
-          {activeMode === 'seeker' ? (
-            // --- SEEKER TABS ---
-            <>
-              <button 
-                onClick={() => handleNav('/')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${currentTab === 'home' ? 'text-brand-400 font-bold scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <Home size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">Home</span>
-              </button>
-
-              <button 
-                onClick={() => handleNav('/wallet')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${currentTab === 'payment' ? 'text-brand-400 font-bold scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <Card size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">Payment</span>
-              </button>
-
-              <button 
-                onClick={() => handleNav('/requests')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${currentTab === 'requests' ? 'text-brand-400 font-bold scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <Briefcase size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">Requests</span>
-              </button>
-
-              <button 
-                onClick={toggleSidebar}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all text-zinc-500 hover:text-zinc-300`}
-              >
-                <Menu size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">More</span>
-              </button>
-            </>
-          ) : (
-            // --- ARTISAN TABS ---
-            <>
-              <button 
-                onClick={() => handleNav('/')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${currentTab === 'home' ? 'text-brand-400 font-bold scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <Home size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">Home</span>
-              </button>
-
-              <button 
-                onClick={() => handleNav('/bookings')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${currentTab === 'requests' ? 'text-brand-400 font-bold scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <Briefcase size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">Bookings</span>
-              </button>
-
-              <button 
-                onClick={() => handleNav('/history')}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${currentTab === 'history' ? 'text-brand-400 font-bold scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                <Clock size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">History</span>
-              </button>
-
-              <button 
-                onClick={toggleSidebar}
-                className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all text-zinc-500 hover:text-zinc-300`}
-              >
-                <Menu size={20} color="currentColor" variant="Broken" />
-                <span className="text-[10px]">More</span>
-              </button>
-            </>
-          )}
+        <nav className="fixed bottom-4 left-4 right-4 z-30 lg:absolute glass border-0 h-16 rounded-full px-3 flex items-center justify-center gap-6">
+          <TabButton
+            isActive={currentTab === 'home'}
+            onClick={() => handleNav('/')}
+            icon={<Home size={18} color="currentColor" variant="Broken" />}
+            label="Home"
+          />
+          <TabButton
+            isActive={currentTab === 'discover'}
+            onClick={() => handleNav('/discover')}
+            icon={<SearchNormal1 size={18} color="currentColor" variant="Broken" />}
+            label="Discover"
+          />
+          <TabButton
+            isActive={currentTab === 'messages'}
+            onClick={() => handleNav('/messages')}
+            icon={<MessageText size={18} color="currentColor" variant="Broken" />}
+            label="Messages"
+          />
+          <TabButton
+            isActive={currentTab === 'me'}
+            onClick={() => handleNav('/more')}
+            icon={
+              <img 
+                src={user?.avatarUrl} 
+                className={`h-6 w-6 rounded-full object-cover transition-all ${
+                  currentTab === 'me' ? 'ring-1 ring-white' : 'opacity-70 hover:opacity-100'
+                }`} 
+                alt="Me" 
+              />
+            }
+            label="Me"
+          />
         </nav>
       )}
     </div>

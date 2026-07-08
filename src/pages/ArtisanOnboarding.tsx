@@ -20,6 +20,9 @@ export const ArtisanOnboarding: React.FC = () => {
   const [businessName, setBusinessName] = useState('');
   const [bio, setBio] = useState('');
   const [experience, setExperience] = useState('3');
+  const [businessNameError, setBusinessNameError] = useState('');
+  const [bioError, setBioError] = useState('');
+  const [experienceError, setExperienceError] = useState('');
 
   // Step 2: KYC
   const [kycDocs, setKycDocs] = useState({
@@ -58,6 +61,28 @@ export const ArtisanOnboarding: React.FC = () => {
   };
 
   const handleNext = () => {
+    if (step === 1) {
+      let hasError = false;
+      if (!businessName) {
+        setBusinessNameError('Business display name is required.');
+        hasError = true;
+      } else {
+        setBusinessNameError('');
+      }
+      if (!bio) {
+        setBioError('Short bio/description is required.');
+        hasError = true;
+      } else {
+        setBioError('');
+      }
+      if (!experience) {
+        setExperienceError('Years of experience is required.');
+        hasError = true;
+      } else {
+        setExperienceError('');
+      }
+      if (hasError) return;
+    }
     setStep(s => s + 1);
   };
 
@@ -183,7 +208,7 @@ export const ArtisanOnboarding: React.FC = () => {
         </div>
       </div>
 
-      <div className="glass border border-zinc-800 shadow-xl rounded-[32px] p-5 text-left">
+      <div className="glass border border-zinc-800 rounded-[32px] p-5 text-left">
         {/* STEP 1: SERVICE SELECTION */}
         {step === 1 && (
           <div className="flex flex-col gap-4 animate-in fade-in">
@@ -212,38 +237,56 @@ export const ArtisanOnboarding: React.FC = () => {
                 </div>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-400 text-xs font-semibold">Business Display Name</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                  <Label className={`text-xs font-semibold transition-colors ${businessNameError ? 'text-danger' : 'text-zinc-400'}`}>Business Display Name</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-xl bg-zinc-900/50 h-11 transition-all focus-within:border-brand-500 ${businessNameError ? 'border-danger focus-within:border-danger' : 'border-zinc-800'}`}>
                     <Input
                       type="text"
                       placeholder="e.g. Kola Electricals LTD"
                       className="w-full bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none"
                       value={businessName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBusinessName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setBusinessName(e.target.value);
+                        if (e.target.value) setBusinessNameError('');
+                      }}
                     />
                   </div>
+                  {businessNameError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{businessNameError}</span>
+                  )}
                 </TextField>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-400 text-xs font-semibold">Years of Experience</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                  <Label className={`text-xs font-semibold transition-colors ${experienceError ? 'text-danger' : 'text-zinc-400'}`}>Years of Experience</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-xl bg-zinc-900/50 h-11 transition-all focus-within:border-brand-500 ${experienceError ? 'border-danger focus-within:border-danger' : 'border-zinc-800'}`}>
                     <Input
                       type="number"
                       className="w-full bg-transparent text-xs text-white focus:outline-none"
                       value={experience}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExperience(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setExperience(e.target.value);
+                        if (e.target.value) setExperienceError('');
+                      }}
                     />
                   </div>
+                  {experienceError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{experienceError}</span>
+                  )}
                 </TextField>
 
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                  <label className="text-zinc-400 text-xs font-semibold">Short Bio / Description</label>
+                  <label className={`text-xs font-semibold transition-colors ${bioError ? 'text-danger' : 'text-zinc-400'}`}>Short Bio / Description</label>
                   <TextArea
                     placeholder="Introduce yourself and describe your skills to customers..."
                     value={bio}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBio(e.target.value)}
-                    className="w-full text-xs text-white bg-zinc-900 border border-zinc-855 rounded-xl p-3.5 focus:border-brand-500 outline-none min-h-[90px]"
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                      setBio(e.target.value);
+                      if (e.target.value) setBioError('');
+                    }}
+                    className={`w-full text-xs text-white bg-zinc-900 border rounded-xl p-3.5 focus:border-brand-500 outline-none min-h-[90px] ${bioError ? 'border-danger focus-within:border-danger' : 'border-zinc-855'}`}
                   />
+                  {bioError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{bioError}</span>
+                  )}
                 </div>
               </Fieldset.Group>
 
@@ -251,7 +294,6 @@ export const ArtisanOnboarding: React.FC = () => {
                 <Button 
                   className="w-full font-bold bg-brand-500 hover:bg-brand-600 h-11 text-white rounded-xl transition-all"
                   onClick={handleNext}
-                  isDisabled={!businessName || !bio}
                 >
                   Continue
                 </Button>

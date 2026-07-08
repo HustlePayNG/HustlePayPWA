@@ -1,9 +1,15 @@
+@import "tailwindcss";
+@import "@heroui/react/styles";
+
+@source "../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
+
+/* ── Supreme font — local variable font ───────────────────────── */
 @font-face {
   font-family: 'Supreme';
   src: url('/fonts/Supreme-Variable.woff2') format('woff2'),
        url('/fonts/Supreme-Variable.woff') format('woff'),
        url('/fonts/Supreme-Variable.ttf') format('truetype');
-  font-weight: 100 800;
+  font-weight: 100 900;
   font-display: swap;
   font-style: normal;
 }
@@ -12,15 +18,10 @@
   src: url('/fonts/Supreme-VariableItalic.woff2') format('woff2'),
        url('/fonts/Supreme-VariableItalic.woff') format('woff'),
        url('/fonts/Supreme-VariableItalic.ttf') format('truetype');
-  font-weight: 100 800;
+  font-weight: 100 900;
   font-display: swap;
   font-style: italic;
 }
-
-@import "tailwindcss";
-@import "@heroui/react/styles";
-
-@source "../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
 
 @theme {
   --font-sans: "Supreme", sans-serif;
@@ -55,10 +56,21 @@
   --color-danger: #DC2626;
 }
 
+html, body {
+  font-family: 'Supreme', sans-serif;
+}
+
 body {
   @apply bg-zinc-50 text-zinc-900 font-sans antialiased overflow-x-hidden;
   background-image: radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 100%);
   background-attachment: fixed;
+}
+
+/* Disable and ban all shadows in the project */
+*, ::before, ::after {
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+  box-shadow: none !important;
 }
 
 /* Custom Webkit scrollbar for premium touch */
@@ -168,6 +180,11 @@ textarea::placeholder {
   -webkit-backdrop-filter: blur(16px) !important;
   border: 1px solid rgba(0, 0, 0, 0.05) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01) !important;
+}
+
+.glass.border-0,
+.glass.border-none {
+  border: 0px !important;
 }
 
 /* Headers and bottom tab menus */
