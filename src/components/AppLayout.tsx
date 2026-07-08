@@ -20,15 +20,15 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, icon, label })
   return (
     <button
       onClick={onClick}
-      className="focus:outline-none cursor-pointer"
+      className="focus:outline-none cursor-pointer h-full shrink-0"
     >
       <motion.div
         layout
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-        className={`flex items-center gap-1.5 h-10 rounded-full transition-colors duration-300 ${
+        className={`flex items-center gap-1.5 h-full rounded-full transition-colors duration-300 ${
           isActive
-            ? 'bg-brand-500 text-white px-4 font-bold scale-105 text-white-force'
-            : 'text-zinc-500 hover:text-zinc-300 px-3'
+            ? 'bg-brand-500 text-white px-5 font-bold text-white-force'
+            : 'text-zinc-500 hover:text-zinc-300 px-4'
         }`}
       >
         {icon}
@@ -151,9 +151,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      {/* Bottom Navigation Bar */}
       {!isArtisanPending && (
-        <nav className="fixed bottom-4 left-4 right-4 z-30 lg:absolute glass border-0 h-16 rounded-full px-3 flex items-center justify-center gap-6">
+        <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit glass border-0 h-11 rounded-full p-0 flex flex-row flex-nowrap items-center justify-center gap-0 overflow-hidden shadow-lg">
           <TabButton
             isActive={currentTab === 'home'}
             onClick={() => handleNav('/')}
@@ -177,7 +176,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             onClick={() => handleNav('/more')}
             icon={
               <img 
-                src={user?.avatarUrl} 
+                src={user?.avatarUrl || "https://api.dicebear.com/7.x/adventurer/svg?seed=HustlePay"} 
                 className={`h-6 w-6 rounded-full object-cover transition-all ${
                   currentTab === 'me' ? 'ring-1 ring-white' : 'opacity-70 hover:opacity-100'
                 }`} 
