@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { mockDb, type ArtisanProfile } from '../services/mockDb';
 import { Star, Location, Award, Calendar, ArrowLeft } from 'iconsax-react';
-import { Button } from '@heroui/react';
+import { Button, toast } from '@heroui/react';
 
 export const ArtisanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +27,7 @@ export const ArtisanDetail: React.FC = () => {
 
   const handleBook = () => {
     if (!selectedServiceId) {
-      alert('Please select a service before booking.');
+      toast.warning('Please select a service before booking.');
       return;
     }
     navigate(`/booking-flow/${artisan.id}?serviceId=${selectedServiceId}`);

@@ -8,7 +8,7 @@ import {
 import { 
   TextField, Label, Input, TextArea, Checkbox, 
   Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem,
-  Button, RadioGroup, Radio
+  Button, RadioGroup, Radio, toast, Fieldset
 } from '@heroui/react';
 
 export const ArtisanOnboarding: React.FC = () => {
@@ -95,7 +95,7 @@ export const ArtisanOnboarding: React.FC = () => {
     const now = new Date().toISOString();
     mockDb.updateUser(user.id, { lastReminderSentAt: now });
     refreshUser();
-    alert('Approval reminder sent successfully!');
+    toast.success('Approval reminder sent successfully!');
   };
 
   const checkReminderCooldown = () => {
@@ -187,324 +187,336 @@ export const ArtisanOnboarding: React.FC = () => {
         {/* STEP 1: SERVICE SELECTION */}
         {step === 1 && (
           <div className="flex flex-col gap-4 animate-in fade-in">
-            <span className="text-sm font-bold text-white flex items-center gap-2 mb-1">
-              <Briefcase size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 1: Business Details
-            </span>
+            <Fieldset>
+              <Fieldset.Legend className="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                <Briefcase size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 1: Business Details
+              </Fieldset.Legend>
 
-            <div className="flex flex-col gap-1.5">
-              <span className="text-zinc-400 text-xs font-semibold">Primary Profession</span>
-              <Select selectedKey={selectedCategory} onSelectionChange={(key) => setSelectedCategory(key as string)}>
-                <SelectTrigger className="w-full bg-zinc-900 border border-zinc-855 rounded-xl p-3 text-xs text-white flex justify-between items-center">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectPopover className="bg-zinc-955 border border-zinc-855 rounded-xl p-1 text-white z-50">
-                  <ListBox className="outline-none">
-                    {mockDb.getServiceCategories().map(cat => (
-                      <ListBoxItem id={cat.id} textValue={cat.name} className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">
-                        {cat.name}
-                      </ListBoxItem>
-                    ))}
-                  </ListBox>
-                </SelectPopover>
-              </Select>
-            </div>
+              <Fieldset.Group className="flex flex-col gap-4 w-full">
+                <div className="flex flex-col gap-1.5 w-full">
+                  <span className="text-zinc-400 text-xs font-semibold text-left">Primary Profession</span>
+                  <Select selectedKey={selectedCategory} onSelectionChange={(key) => setSelectedCategory(key as string)}>
+                    <SelectTrigger className="w-full bg-zinc-900 border border-zinc-855 rounded-xl p-3 text-xs text-white flex justify-between items-center">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectPopover className="bg-zinc-955 border border-zinc-855 rounded-xl p-1 text-white z-50">
+                      <ListBox className="outline-none">
+                        {mockDb.getServiceCategories().map(cat => (
+                          <ListBoxItem id={cat.id} textValue={cat.name} className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">
+                            {cat.name}
+                          </ListBoxItem>
+                        ))}
+                      </ListBox>
+                    </SelectPopover>
+                  </Select>
+                </div>
 
-            <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Business Display Name</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <Input
-                  type="text"
-                  placeholder="e.g. Kola Electricals LTD"
-                  className="w-full bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none"
-                  value={businessName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBusinessName(e.target.value)}
-                />
-              </div>
-            </TextField>
+                <TextField className="flex flex-col gap-1.5 w-full">
+                  <Label className="text-zinc-400 text-xs font-semibold">Business Display Name</Label>
+                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                    <Input
+                      type="text"
+                      placeholder="e.g. Kola Electricals LTD"
+                      className="w-full bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+                      value={businessName}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBusinessName(e.target.value)}
+                    />
+                  </div>
+                </TextField>
 
-            <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Years of Experience</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <Input
-                  type="number"
-                  className="w-full bg-transparent text-xs text-white focus:outline-none"
-                  value={experience}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExperience(e.target.value)}
-                />
-              </div>
-            </TextField>
+                <TextField className="flex flex-col gap-1.5 w-full">
+                  <Label className="text-zinc-400 text-xs font-semibold">Years of Experience</Label>
+                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                    <Input
+                      type="number"
+                      className="w-full bg-transparent text-xs text-white focus:outline-none"
+                      value={experience}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExperience(e.target.value)}
+                    />
+                  </div>
+                </TextField>
 
-            <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-zinc-400 text-xs font-semibold">Short Bio / Description</label>
-              <TextArea
-                placeholder="Introduce yourself and describe your skills to customers..."
-                value={bio}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBio(e.target.value)}
-                className="w-full text-xs text-white bg-zinc-900 border border-zinc-850 rounded-xl p-3.5 focus:border-brand-500 outline-none min-h-[90px]"
-              />
-            </div>
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                  <label className="text-zinc-400 text-xs font-semibold">Short Bio / Description</label>
+                  <TextArea
+                    placeholder="Introduce yourself and describe your skills to customers..."
+                    value={bio}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBio(e.target.value)}
+                    className="w-full text-xs text-white bg-zinc-900 border border-zinc-855 rounded-xl p-3.5 focus:border-brand-500 outline-none min-h-[90px]"
+                  />
+                </div>
+              </Fieldset.Group>
 
-            <Button 
-              className="w-full font-bold bg-brand-500 hover:bg-brand-600 mt-2 h-11 text-white rounded-xl transition-all"
-              onClick={handleNext}
-              isDisabled={!businessName || !bio}
-            >
-              Continue
-            </Button>
+              <Fieldset.Actions className="mt-4">
+                <Button 
+                  className="w-full font-bold bg-brand-500 hover:bg-brand-600 h-11 text-white rounded-xl transition-all"
+                  onClick={handleNext}
+                  isDisabled={!businessName || !bio}
+                >
+                  Continue
+                </Button>
+              </Fieldset.Actions>
+            </Fieldset>
           </div>
         )}
 
         {/* STEP 2: KYC DOCUMENT UPLOADS */}
         {step === 2 && (
           <div className="flex flex-col gap-4 animate-in fade-in">
-            <span className="text-sm font-bold text-white flex items-center gap-2 mb-1">
-              <DocumentText size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 2: KYC Verification
-            </span>
-            <p className="text-xs text-zinc-400 -mt-2 mb-2 leading-relaxed font-light">
-              Upload scans of mandatory documents. Government files are processed securely under NDPR.
-            </p>
+            <Fieldset>
+              <Fieldset.Legend className="text-sm font-bold text-white flex items-center gap-2 mb-1">
+                <DocumentText size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 2: KYC Verification
+              </Fieldset.Legend>
+              <p className="text-xs text-zinc-400 -mt-2 mb-3 leading-relaxed font-light">
+                Upload scans of mandatory documents. Government files are processed securely under NDPR.
+              </p>
 
-            <div className="flex flex-col gap-3.5">
-              <Checkbox
-                isSelected={kycDocs.govId}
-                onChange={(val) => setKycDocs(k => ({ ...k, govId: val }))}
-                className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
-              >
-                <div>
-                  <div className="font-bold text-xs text-white">Government ID</div>
-                  <div className="text-[10px] text-zinc-500">NIN, Voter's Card, or Passport</div>
-                </div>
-              </Checkbox>
+              <Fieldset.Group className="flex flex-col gap-3.5 w-full">
+                <Checkbox
+                  isSelected={kycDocs.govId}
+                  onChange={(val) => setKycDocs(k => ({ ...k, govId: val }))}
+                  className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
+                >
+                  <div>
+                    <div className="font-bold text-xs text-white">Government ID</div>
+                    <div className="text-[10px] text-zinc-500">NIN, Voter's Card, or Passport</div>
+                  </div>
+                </Checkbox>
 
-              <Checkbox
-                isSelected={kycDocs.certificate}
-                onChange={(val) => setKycDocs(k => ({ ...k, certificate: val }))}
-                className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
-              >
-                <div>
-                  <div className="font-bold text-xs text-white">Professional Certificate</div>
-                  <div className="text-[10px] text-zinc-500">Trade test, training certificate</div>
-                </div>
-              </Checkbox>
+                <Checkbox
+                  isSelected={kycDocs.certificate}
+                  onChange={(val) => setKycDocs(k => ({ ...k, certificate: val }))}
+                  className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
+                >
+                  <div>
+                    <div className="font-bold text-xs text-white">Professional Certificate</div>
+                    <div className="text-[10px] text-zinc-500">Trade test, training certificate</div>
+                  </div>
+                </Checkbox>
 
-              <Checkbox
-                isSelected={kycDocs.photo}
-                onChange={(val) => setKycDocs(k => ({ ...k, photo: val }))}
-                className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
-              >
-                <div>
-                  <div className="font-bold text-xs text-white">Passport Photograph</div>
-                  <div className="text-[10px] text-zinc-500">For public search avatar</div>
-                </div>
-              </Checkbox>
-            </div>
+                <Checkbox
+                  isSelected={kycDocs.photo}
+                  onChange={(val) => setKycDocs(k => ({ ...k, photo: val }))}
+                  className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
+                >
+                  <div>
+                    <div className="font-bold text-xs text-white">Passport Photograph</div>
+                    <div className="text-[10px] text-zinc-500">For public search avatar</div>
+                  </div>
+                </Checkbox>
+              </Fieldset.Group>
 
-            <div className="flex gap-3 mt-4">
-              <Button 
-                className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
-                onClick={handlePrev}
-              >
-                Back
-              </Button>
-              <Button 
-                className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
-                onClick={handleNext}
-                isDisabled={!kycDocs.govId || !kycDocs.certificate || !kycDocs.photo}
-              >
-                Continue
-              </Button>
-            </div>
+              <Fieldset.Actions className="flex gap-3 mt-5">
+                <Button 
+                  className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
+                  onClick={handlePrev}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
+                  onClick={handleNext}
+                  isDisabled={!kycDocs.govId || !kycDocs.certificate || !kycDocs.photo}
+                >
+                  Continue
+                </Button>
+              </Fieldset.Actions>
+            </Fieldset>
           </div>
-        )}
-
-        {/* STEP 3: AVAILABILITY SETUPS */}
+        )}        {/* STEP 3: AVAILABILITY SETUPS */}
         {step === 3 && (
           <div className="flex flex-col gap-4 animate-in fade-in">
-            <span className="text-sm font-bold text-white flex items-center gap-2 mb-1">
-              <Calendar size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 3: Availability Schedule
-            </span>
-            <p className="text-xs text-zinc-400 -mt-2 leading-relaxed mb-1 font-light">
-              Toggle days and adjust service hours. Seekers can only book you during these hours.
-            </p>
+            <Fieldset>
+              <Fieldset.Legend className="text-sm font-bold text-white flex items-center gap-2 mb-1">
+                <Calendar size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 3: Availability Schedule
+              </Fieldset.Legend>
+              <p className="text-xs text-zinc-400 -mt-2 leading-relaxed mb-3 font-light">
+                Toggle days and adjust service hours. Seekers can only book you during these hours.
+              </p>
 
-            <div className="flex flex-col gap-2.5 max-h-[250px] overflow-y-auto pr-1 text-xs">
-              {availability.map((day, idx) => (
-                <div key={day.weekday} className="flex items-center justify-between p-2.5 border border-zinc-850 rounded-xl bg-zinc-900/20">
-                  <Checkbox
-                    isSelected={day.enabled}
-                    onChange={(val) => {
-                      const updated = [...availability];
-                      updated[idx].enabled = val;
-                      setAvailability(updated);
-                    }}
-                    className="text-xs font-semibold text-white"
-                  >
-                    {day.weekday}
-                  </Checkbox>
-                  {day.enabled && (
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="time"
-                        value={day.startTime}
-                        onChange={(e) => {
-                          const updated = [...availability];
-                          updated[idx].startTime = e.target.value;
-                          setAvailability(updated);
-                        }}
-                        className="bg-zinc-900 text-white border border-zinc-800 rounded p-1 text-[10px] focus:outline-none"
-                      />
-                      <span className="text-zinc-500">-</span>
-                      <input
-                        type="time"
-                        value={day.endTime}
-                        onChange={(e) => {
-                          const updated = [...availability];
-                          updated[idx].endTime = e.target.value;
-                          setAvailability(updated);
-                        }}
-                        className="bg-zinc-900 text-white border border-zinc-800 rounded p-1 text-[10px] focus:outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+              <Fieldset.Group className="flex flex-col gap-2.5 max-h-[250px] overflow-y-auto pr-1 text-xs w-full">
+                {availability.map((day, idx) => (
+                  <div key={day.weekday} className="flex items-center justify-between p-2.5 border border-zinc-855 rounded-xl bg-zinc-900/20 w-full">
+                    <Checkbox
+                      isSelected={day.enabled}
+                      onChange={(val) => {
+                        const updated = [...availability];
+                        updated[idx].enabled = val;
+                        setAvailability(updated);
+                      }}
+                      className="text-xs font-semibold text-white cursor-pointer"
+                    >
+                      {day.weekday}
+                    </Checkbox>
+                    {day.enabled && (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="time"
+                          value={day.startTime}
+                          onChange={(e) => {
+                            const updated = [...availability];
+                            updated[idx].startTime = e.target.value;
+                            setAvailability(updated);
+                          }}
+                          className="bg-zinc-900 text-white border border-zinc-800 rounded p-1 text-[10px] focus:outline-none"
+                        />
+                        <span className="text-zinc-500">-</span>
+                        <input
+                          type="time"
+                          value={day.endTime}
+                          onChange={(e) => {
+                            const updated = [...availability];
+                            updated[idx].endTime = e.target.value;
+                            setAvailability(updated);
+                          }}
+                          className="bg-zinc-900 text-white border border-zinc-800 rounded p-1 text-[10px] focus:outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </Fieldset.Group>
 
-            <div className="flex gap-3 mt-2">
-              <Button 
-                className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
-                onClick={handlePrev}
-              >
-                Back
-              </Button>
-              <Button 
-                className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
-                onClick={handleNext}
-              >
-                Continue
-              </Button>
-            </div>
+              <Fieldset.Actions className="flex gap-3 mt-5">
+                <Button 
+                  className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
+                  onClick={handlePrev}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
+                  onClick={handleNext}
+                >
+                  Continue
+                </Button>
+              </Fieldset.Actions>
+            </Fieldset>
           </div>
-        )}
-
-        {/* STEP 4: TRAINING SCHEDULE */}
+        )}        {/* STEP 4: TRAINING SCHEDULE */}
         {step === 4 && (
           <div className="flex flex-col gap-4 animate-in fade-in">
-            <span className="text-sm font-bold text-white flex items-center gap-2 mb-1">
-              <Clock size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 4: Training Selection
-            </span>
-            <p className="text-xs text-zinc-400 -mt-2 leading-relaxed mb-2 font-light">
-              Choose an induction training session to learn about HustlePay work ethics and payout policies.
-            </p>
+            <Fieldset>
+              <Fieldset.Legend className="text-sm font-bold text-white flex items-center gap-2 mb-1">
+                <Clock size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 4: Training Selection
+              </Fieldset.Legend>
+              <p className="text-xs text-zinc-400 -mt-2 leading-relaxed mb-3 font-light">
+                Choose an induction training session to learn about HustlePay work ethics and payout policies.
+              </p>
 
-            <div className="flex flex-col gap-1.5 text-left">
-              <span className="text-zinc-400 text-xs font-semibold">Induction Slots</span>
-              <Select selectedKey={selectedTraining} onSelectionChange={(key) => setSelectedTraining(key as string)}>
-                <SelectTrigger className="w-full bg-zinc-900 border border-zinc-850 rounded-xl p-3 text-xs text-white flex justify-between items-center">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectPopover className="bg-zinc-955 border border-zinc-850 rounded-xl p-1 text-white z-50">
-                  <ListBox className="outline-none">
-                    <ListBoxItem id="session-1" textValue="Sat, Jul 4 — 10:00 AM (Online Zoom)" className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">Sat, Jul 4 — 10:00 AM (Online Zoom)</ListBoxItem>
-                    <ListBoxItem id="session-2" textValue="Wed, Jul 8 — 2:00 PM (Online Zoom)" className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">Wed, Jul 8 — 2:00 PM (Online Zoom)</ListBoxItem>
-                    <ListBoxItem id="session-3" textValue="Sat, Jul 11 — 10:00 AM (Online Zoom)" className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">Sat, Jul 11 — 10:00 AM (Online Zoom)</ListBoxItem>
-                  </ListBox>
-                </SelectPopover>
-              </Select>
-            </div>
+              <Fieldset.Group className="flex flex-col gap-1.5 text-left w-full">
+                <span className="text-zinc-400 text-xs font-semibold">Induction Slots</span>
+                <Select selectedKey={selectedTraining} onSelectionChange={(key) => setSelectedTraining(key as string)}>
+                  <SelectTrigger className="w-full bg-zinc-900 border border-zinc-850 rounded-xl p-3 text-xs text-white flex justify-between items-center">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectPopover className="bg-zinc-955 border border-zinc-850 rounded-xl p-1 text-white z-50">
+                    <ListBox className="outline-none">
+                      <ListBoxItem id="session-1" textValue="Sat, Jul 4 — 10:00 AM (Online Zoom)" className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">Sat, Jul 4 — 10:00 AM (Online Zoom)</ListBoxItem>
+                      <ListBoxItem id="session-2" textValue="Wed, Jul 8 — 2:00 PM (Online Zoom)" className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">Wed, Jul 8 — 2:00 PM (Online Zoom)</ListBoxItem>
+                      <ListBoxItem id="session-3" textValue="Sat, Jul 11 — 10:00 AM (Online Zoom)" className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">Sat, Jul 11 — 10:00 AM (Online Zoom)</ListBoxItem>
+                    </ListBox>
+                  </SelectPopover>
+                </Select>
+              </Fieldset.Group>
 
-            <div className="flex gap-3 mt-4">
-              <Button 
-                className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
-                onClick={handlePrev}
-              >
-                Back
-              </Button>
-              <Button 
-                className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
-                onClick={handleNext}
-              >
-                Continue
-              </Button>
-            </div>
+              <Fieldset.Actions className="flex gap-3 mt-5">
+                <Button 
+                  className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
+                  onClick={handlePrev}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
+                  onClick={handleNext}
+                >
+                  Continue
+                </Button>
+              </Fieldset.Actions>
+            </Fieldset>
           </div>
         )}
 
         {/* STEP 5: PRICING CONFIGURATION */}
         {step === 5 && (
           <div className="flex flex-col gap-4 animate-in fade-in text-left">
-            <span className="text-sm font-bold text-white flex items-center gap-2 mb-1">
-              <Money size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 5: Pricing Setup
-            </span>
+            <Fieldset>
+              <Fieldset.Legend className="text-sm font-bold text-white flex items-center gap-2 mb-1">
+                <Money size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 5: Pricing Setup
+              </Fieldset.Legend>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-zinc-400 text-xs font-semibold">Base Rate Type</label>
-              <RadioGroup
-                value={rateType}
-                onChange={(val) => setRateType(val as 'hourly' | 'per_service')}
-                orientation="horizontal"
-              >
-                <Radio value="hourly" className="text-xs text-white">Hourly Wage</Radio>
-                <Radio value="per_service" className="text-xs text-white">Fixed Per Job</Radio>
-              </RadioGroup>
-            </div>
+              <Fieldset.Group className="flex flex-col gap-4 w-full">
+                <div className="flex flex-col gap-1.5 w-full text-left">
+                  <label className="text-zinc-400 text-xs font-semibold">Base Rate Type</label>
+                  <RadioGroup
+                    value={rateType}
+                    onChange={(val) => setRateType(val as 'hourly' | 'per_service')}
+                    orientation="horizontal"
+                  >
+                    <Radio value="hourly" className="text-xs text-white">Hourly Wage</Radio>
+                    <Radio value="per_service" className="text-xs text-white">Fixed Per Job</Radio>
+                  </RadioGroup>
+                </div>
 
-            <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Base Rate (₦)</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <Input
-                  type="number"
-                  className="w-full bg-transparent text-xs text-white focus:outline-none"
-                  value={baseRate.toString()}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBaseRate(parseInt(e.target.value) || 0)}
-                />
-              </div>
-            </TextField>
+                <TextField className="flex flex-col gap-1.5 w-full">
+                  <Label className="text-zinc-400 text-xs font-semibold">Base Rate (₦)</Label>
+                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                    <Input
+                      type="number"
+                      className="w-full bg-transparent text-xs text-white focus:outline-none"
+                      value={baseRate.toString()}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBaseRate(parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </TextField>
 
-            <TextField className="flex flex-col gap-1.5 w-full">
-              <Label className="text-zinc-400 text-xs font-semibold">Call-out Fee (₦)</Label>
-              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-                <Input
-                  type="number"
-                  className="w-full bg-transparent text-xs text-white focus:outline-none"
-                  value={calloutFee.toString()}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCalloutFee(parseInt(e.target.value) || 0)}
-                />
-              </div>
-              <span className="text-[10px] text-zinc-500">Secured commitment fee paid by seeker at booking.</span>
-            </TextField>
+                <TextField className="flex flex-col gap-1.5 w-full">
+                  <Label className="text-zinc-400 text-xs font-semibold">Call-out Fee (₦)</Label>
+                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                    <Input
+                      type="number"
+                      className="w-full bg-transparent text-xs text-white focus:outline-none"
+                      value={calloutFee.toString()}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCalloutFee(parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Secured commitment fee paid by seeker at booking.</span>
+                </TextField>
 
-            {/* Commission Take Home Net Preview (ART-14) */}
-            <div className="glass border-brand-500/20 bg-brand-500/5 p-4 rounded-2xl flex flex-col gap-2 border">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400">Labor Charge:</span>
-                <span className="font-semibold text-white">₦{baseRate.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400">HustlePay Commission (5%):</span>
-                <span className="text-red-400 font-semibold">-₦{(baseRate * 0.05).toLocaleString()}</span>
-              </div>
-              <div className="h-px bg-zinc-850 my-1"></div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-zinc-300">You Will Receive:</span>
-                <span className="font-extrabold text-brand-300 text-base">₦{calculateNet(baseRate).toLocaleString()}</span>
-              </div>
-            </div>
+                {/* Commission Take Home Net Preview (ART-14) */}
+                <div className="glass border-brand-500/20 bg-brand-500/5 p-4 rounded-2xl flex flex-col gap-2 border w-full">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-400">Labor Charge:</span>
+                    <span className="font-semibold text-white">₦{baseRate.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-400">HustlePay Commission (5%):</span>
+                    <span className="text-red-400 font-semibold">-₦{(baseRate * 0.05).toLocaleString()}</span>
+                  </div>
+                  <div className="h-px bg-zinc-850 my-1"></div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-bold text-zinc-300">You Will Receive:</span>
+                    <span className="font-extrabold text-brand-300 text-base">₦{calculateNet(baseRate).toLocaleString()}</span>
+                  </div>
+                </div>
+              </Fieldset.Group>
 
-            <div className="flex gap-3 mt-4">
-              <Button 
-                className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
-                onClick={handlePrev}
-              >
-                Back
-              </Button>
-              <Button 
-                className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-655 transition-all" 
-                onClick={handleSubmitOnboarding}
-              >
-                Submit Application
-              </Button>
-            </div>
+              <Fieldset.Actions className="flex gap-3 mt-5">
+                <Button 
+                  className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
+                  onClick={handlePrev}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
+                  onClick={handleSubmitOnboarding}
+                >
+                  Submit Application
+                </Button>
+              </Fieldset.Actions>
+            </Fieldset>
           </div>
         )}
       </div>

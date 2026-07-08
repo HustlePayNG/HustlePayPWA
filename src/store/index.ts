@@ -10,7 +10,7 @@ interface AppState {
   unreadCount: number;
   
   // Actions
-  login: (email: string) => boolean;
+  login: (email: string, role: 'seeker' | 'artisan') => boolean;
   signup: (name: string, email: string, phone: string, address: string, initialRole: 'seeker' | 'artisan') => void;
   logout: () => void;
   switchMode: () => void;
@@ -41,8 +41,8 @@ export const useAppStore = create<AppState>((set, get) => {
     notifications: [],
     unreadCount: 0,
 
-    login: (email: string) => {
-      const user = mockDb.login(email);
+    login: (email: string, role: 'seeker' | 'artisan') => {
+      const user = mockDb.login(email, role);
       if (user) {
         sessionStorage.setItem('hp_session_user_id', user.id);
         set({ user, activeMode: user.activeModePreference });

@@ -60,7 +60,7 @@ const BackgroundVideoComponent: React.FC = () => {
         preload="auto"
         className="w-full h-full object-cover"
       >
-        <source src="/assets/images/13106016_2160_3840_60fps.mp4" type="video/mp4" />
+        <source src="https://videos.pexels.com/video-files/34459570/14601357_2160_3840_30fps.mp4" type="video/mp4" />
       </video>
       <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px]"></div>
     </div>

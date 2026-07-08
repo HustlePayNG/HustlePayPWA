@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './store';
 import AppSplash from './components/AppSplash';
+import { ToastProvider } from '@heroui/react';
 
 // Layout & PWA Prompt
 import MobileFrame from './components/MobileFrame';
@@ -95,7 +96,9 @@ export const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
+    <>
+      <ToastProvider placement="top" />
+      <BrowserRouter>
         <MobileFrame>
           <Routes>
             {/* Intro Tour */}
@@ -235,6 +238,7 @@ export const App: React.FC = () => {
         {/* PWA Update Prompter */}
         <ReloadPrompt />
       </BrowserRouter>
+    </>
   );
 };
 

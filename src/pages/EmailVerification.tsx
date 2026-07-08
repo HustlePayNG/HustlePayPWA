@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { Sms, TickCircle } from 'iconsax-react';
-import { Button, Spinner } from '@heroui/react';
+import { Button, Spinner, Fieldset, Card } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
 
 export const EmailVerification: React.FC = () => {
@@ -56,7 +56,7 @@ export const EmailVerification: React.FC = () => {
     <div className="flex-1 flex flex-col justify-center px-6 py-12 bg-zinc-955/10 relative overflow-hidden min-h-screen text-center animate-in fade-in duration-300">
       <BackgroundVideo />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md">
         {verified ? (
           <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-300">
             <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-success-500/10 text-success-500">
@@ -77,44 +77,52 @@ export const EmailVerification: React.FC = () => {
               We sent a verification code to <span className="text-brand-500 font-bold">{user?.email}</span>.
             </p>
 
-            <div className="glass border border-zinc-200 shadow-sm rounded-[32px] p-6 mt-8 flex flex-col gap-6 text-center">
-              <div className="flex gap-2.5 justify-center">
-                {code.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    id={`digit-${idx}`}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(idx, e.target.value)}
-                    className="w-11 h-14 bg-zinc-50/50 border border-zinc-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-zinc-900 rounded-2xl text-center font-black text-lg focus:outline-none transition-all"
-                  />
-                ))}
-              </div>
+            <Card className="glass border-0 shadow-2xl rounded-[32px] p-6 mt-8 bg-zinc-950/40">
+              <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }}>
+                <Fieldset>
+                  <Fieldset.Legend className="sr-only">Enter Verification Code</Fieldset.Legend>
+                  
+                  <Fieldset.Group className="flex gap-2.5 justify-center">
+                    {code.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        id={`digit-${idx}`}
+                        type="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleChange(idx, e.target.value)}
+                        className="w-11 h-14 bg-zinc-50/50 border border-zinc-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-zinc-900 rounded-2xl text-center font-black text-lg focus:outline-none transition-all"
+                      />
+                    ))}
+                  </Fieldset.Group>
 
-              <Button
-                className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
-                onClick={handleVerify}
-                isDisabled={loading || code.some(d => d === '')}
-              >
-                {loading && <Spinner size="sm" />}
-                Verify Code
-              </Button>
+                  <Fieldset.Actions className="flex flex-col gap-4 mt-6">
+                    <Button
+                      type="submit"
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                      isDisabled={loading || code.some(d => d === '')}
+                    >
+                      {loading && <Spinner size="sm" />}
+                      Verify Code
+                    </Button>
 
-              <div className="text-xs text-zinc-500">
-                Didn't receive code?{' '}
-                {timer > 0 ? (
-                  <span className="font-semibold text-zinc-700">Resend in {timer}s</span>
-                ) : (
-                  <Button 
-                    onClick={handleResend} 
-                    className="text-brand-500 hover:text-brand-600 font-bold hover:underline p-0 h-auto min-w-0 bg-transparent inline"
-                  >
-                    Resend Now
-                  </Button>
-                )}
-              </div>
-            </div>
+                    <div className="text-xs text-zinc-500 text-center">
+                      Didn't receive code?{' '}
+                      {timer > 0 ? (
+                        <span className="font-semibold text-zinc-700">Resend in {timer}s</span>
+                      ) : (
+                        <Button 
+                          onClick={handleResend} 
+                          className="text-brand-500 hover:text-brand-600 font-bold hover:underline p-0 h-auto min-w-0 bg-transparent inline"
+                        >
+                          Resend Now
+                        </Button>
+                      )}
+                    </div>
+                  </Fieldset.Actions>
+                </Fieldset>
+              </form>
+            </Card>
           </>
         )}
       </div>

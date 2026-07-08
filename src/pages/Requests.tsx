@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb, type Booking } from '../services/mockDb';
 import { MessageText, Calendar, Star, Danger } from 'iconsax-react';
-import { Button, TextArea, Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner } from '@heroui/react';
+import { Button, TextArea, Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner, toast } from '@heroui/react';
 
 export const Requests: React.FC = () => {
   const navigate = useNavigate();
@@ -51,9 +51,9 @@ export const Requests: React.FC = () => {
       const updated = mockDb.getBookingById(bk.id);
       if (updated) setSelectedBooking(updated);
       
-      alert('Remaining balance paid successfully! Artisan can now mark the job complete.');
+      toast.success('Remaining balance paid successfully! Artisan can now mark the job complete.');
     } catch (e: any) {
-      alert(`Insufficient funds. Your wallet balance is too low to pay the remaining balance of ₦${remaining.toLocaleString()}. Please top up.`);
+      toast.danger(`Insufficient funds. Your wallet balance is too low to pay the remaining balance of ₦${remaining.toLocaleString()}. Please top up.`);
       navigate('/wallet');
     }
   };
@@ -94,7 +94,7 @@ export const Requests: React.FC = () => {
       
       refreshBookings();
       handleCloseDetails();
-      alert('Thank you for rating your service!');
+      toast.success('Thank you for rating your service!');
     }, 1000);
   };
 
@@ -115,7 +115,7 @@ export const Requests: React.FC = () => {
       
       refreshBookings();
       handleCloseDetails();
-      alert('Dispute raised successfully. An operations admin will review the logs.');
+      toast.success('Dispute raised successfully. An operations admin will review the logs.');
     }, 1000);
   };
 

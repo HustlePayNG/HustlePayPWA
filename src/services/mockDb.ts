@@ -391,10 +391,35 @@ export const mockDb = {
     return newUser;
   },
 
-  login: (email: string): User | null => {
+  login: (email: string, role: 'seeker' | 'artisan'): User => {
     const users = getStorageItem<User[]>('hp_users');
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    return user || null;
+    let user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      const cleanName = email.split('@')[0];
+      const fullName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+      user = {
+        id: `usr-${Math.random().toString(36).substr(2, 9)}`,
+        email: email.toLowerCase(),
+        fullName,
+        phone: '+234 800 000 0000',
+        avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName}`,
+        roles: [role],
+        activeModePreference: role,
+        kycStatus: role === 'artisan' ? 'approved' : undefined,
+        address: {
+          formattedAddress: '42 Montgomery Road, Yaba, Lagos',
+          latitude: 6.5058,
+          longitude: 3.3768
+        }
+      };
+      users.push(user);
+      setStorageItem('hp_users', users);
+
+      const wallets = getStorageItem<Wallet[]>('hp_wallets');
+      wallets.push({ userId: user.id, balance: 100000 });
+      setStorageItem('hp_wallets', wallets);
+    }
+    return user;
   },
 
   getUserById: (id: string): User | undefined => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { User, Call, Location, ShieldSecurity } from 'iconsax-react';
-import { TextField, Label, Input, Checkbox, Button, Spinner } from '@heroui/react';
+import { TextField, Label, Input, Checkbox, Button, Spinner, toast, Fieldset } from '@heroui/react';
 
 export const Settings: React.FC = () => {
   const { user, updateUserProfile } = useAppStore();
@@ -31,7 +31,7 @@ export const Settings: React.FC = () => {
         }
       });
       setSaving(false);
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
     }, 1200);
   };
 
@@ -43,64 +43,65 @@ export const Settings: React.FC = () => {
       </p>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">
-        <div className="glass border border-zinc-850 rounded-[28px] p-5 flex flex-col gap-4">
-          
-          <div className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <Fieldset className="glass border border-zinc-850 rounded-[28px] p-5 flex flex-col gap-4">
+          <Fieldset.Legend className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider text-zinc-400">
             <User size={14} color="currentColor" variant="Broken" className="text-brand-400" /> Public Credentials
-          </div>
+          </Fieldset.Legend>
 
-          <TextField className="flex flex-col gap-1.5 w-full">
-            <Label className="text-zinc-400 text-xs font-semibold">Full Name</Label>
-            <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-              <User className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
-              <Input
-                type="text"
-                className="w-full bg-transparent text-xs text-white focus:outline-none"
-                value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-              />
+          <Fieldset.Group className="flex flex-col gap-4 w-full">
+            <TextField className="flex flex-col gap-1.5 w-full">
+              <Label className="text-zinc-400 text-xs font-semibold">Full Name</Label>
+              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                <User className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
+                <Input
+                  type="text"
+                  className="w-full bg-transparent text-xs text-white focus:outline-none"
+                  value={name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                />
+              </div>
+            </TextField>
+
+            <TextField className="flex flex-col gap-1.5 w-full">
+              <Label className="text-zinc-400 text-xs font-semibold">Phone Number</Label>
+              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                <Call className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
+                <Input
+                  type="tel"
+                  className="w-full bg-transparent text-xs text-white focus:outline-none"
+                  value={phone}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+                />
+              </div>
+            </TextField>
+
+            <TextField className="flex flex-col gap-1.5 w-full">
+              <Label className="text-zinc-400 text-xs font-semibold">Service Delivery Location</Label>
+              <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
+                <Location className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
+                <Input
+                  type="text"
+                  className="w-full bg-transparent text-xs text-white focus:outline-none"
+                  value={address}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
+                />
+              </div>
+            </TextField>
+
+            <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-semibold leading-relaxed -mt-1 pl-1">
+              <Location size={10} color="currentColor" variant="Broken" className="text-brand-400 shrink-0" />
+              <span>Coordinates: {user.address?.latitude.toFixed(4)}, {user.address?.longitude.toFixed(4)}</span>
             </div>
-          </TextField>
-
-          <TextField className="flex flex-col gap-1.5 w-full">
-            <Label className="text-zinc-400 text-xs font-semibold">Phone Number</Label>
-            <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-              <Call className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
-              <Input
-                type="tel"
-                className="w-full bg-transparent text-xs text-white focus:outline-none"
-                value={phone}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
-              />
-            </div>
-          </TextField>
-
-          <TextField className="flex flex-col gap-1.5 w-full">
-            <Label className="text-zinc-400 text-xs font-semibold">Service Delivery Location</Label>
-            <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 h-11 transition-colors">
-              <Location className="text-zinc-500 shrink-0" size={16} color="currentColor" variant="Broken" />
-              <Input
-                type="text"
-                className="w-full bg-transparent text-xs text-white focus:outline-none"
-                value={address}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
-              />
-            </div>
-          </TextField>
-
-          <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-semibold leading-relaxed -mt-1 pl-1">
-            <Location size={10} color="currentColor" variant="Broken" className="text-brand-400 shrink-0" />
-            <span>Coordinates: {user.address?.latitude.toFixed(4)}, {user.address?.longitude.toFixed(4)}</span>
-          </div>
-        </div>
+          </Fieldset.Group>
+        </Fieldset>
 
         {/* NDPR compliance settings (GEN-7) */}
-        <div className="glass border border-zinc-855 rounded-[28px] p-5 flex flex-col gap-3">
-          <div className="flex items-center gap-1.5 mb-1 text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <Fieldset className="glass border border-zinc-855 rounded-[28px] p-5 flex flex-col gap-3">
+          <Fieldset.Legend className="flex items-center gap-1.5 mb-1 text-xs font-bold uppercase tracking-wider text-zinc-400">
             <ShieldSecurity size={14} color="currentColor" variant="Broken" className="text-brand-400" /> NDPR Privacy Toggles
-          </div>
+          </Fieldset.Legend>
 
-          <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
+          <Fieldset.Group className="flex flex-col gap-3.5 text-xs text-zinc-400 w-full">
             <Checkbox
               isSelected={true}
               isDisabled
@@ -116,17 +117,19 @@ export const Settings: React.FC = () => {
             >
               Opt-in to newsletter distribution and periodic marketing campaigns.
             </Checkbox>
-          </div>
-        </div>
+          </Fieldset.Group>
+        </Fieldset>
 
-        <Button
-          type="submit"
-          isDisabled={saving}
-          className="w-full flex items-center justify-center font-bold h-11 bg-brand-500 hover:bg-brand-600 rounded-2xl shadow-xl shadow-brand-500/10 mt-2 text-white transition-all gap-2"
-        >
-          {saving && <Spinner size="sm" />}
-          Save Changes
-        </Button>
+        <div className="w-full mt-2">
+          <Button
+            type="submit"
+            isDisabled={saving}
+            className="w-full flex items-center justify-center font-bold h-11 bg-brand-500 hover:bg-brand-600 rounded-2xl shadow-xl shadow-brand-500/10 text-white transition-all gap-2"
+          >
+            {saving && <Spinner size="sm" />}
+            Save Changes
+          </Button>
+        </div>
       </form>
     </div>
   );

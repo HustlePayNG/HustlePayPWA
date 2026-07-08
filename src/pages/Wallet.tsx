@@ -8,7 +8,7 @@ import {
 import { 
   TextField, Label, Input, 
   Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem,
-  Button, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner 
+  Button, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner, toast 
 } from '@heroui/react';
 
 export const Wallet: React.FC = () => {
@@ -50,7 +50,7 @@ export const Wallet: React.FC = () => {
   const handleAddMoney = () => {
     const amt = parseFloat(addAmount);
     if (isNaN(amt) || amt <= 0) {
-      alert('Please enter a valid amount.');
+      toast.warning('Please enter a valid amount.');
       return;
     }
 
@@ -58,6 +58,7 @@ export const Wallet: React.FC = () => {
     setTimeout(() => {
       mockDb.creditWallet(user.id, amt, `Top-up via Card (*${cardNum.slice(-4)})`, `TX-${Math.floor(100000 + Math.random() * 900000)}`);
       refreshWallet();
+      toast.success('Funds added successfully!');
       setLoading(false);
       setShowAddMoney(false);
       setAddAmount('10000');
@@ -67,18 +68,18 @@ export const Wallet: React.FC = () => {
   const handleWithdraw = () => {
     const amt = parseFloat(withdrawAmount);
     if (isNaN(amt) || amt <= 0) {
-      alert('Please enter a valid amount.');
+      toast.warning('Please enter a valid amount.');
       return;
     }
 
     if (!wallet || wallet.balance < amt) {
-      alert('Insufficient funds in wallet ledger.');
+      toast.danger('Insufficient funds in wallet ledger.');
       return;
     }
 
     const bank = bankAccounts.find(b => b.id === selectedBankId);
     if (!bank) {
-      alert('Please select a destination bank.');
+      toast.warning('Please select a destination bank.');
       return;
     }
 
@@ -86,6 +87,7 @@ export const Wallet: React.FC = () => {
     setTimeout(() => {
       mockDb.deductWallet(user.id, amt, `Withdrawal to ${bank.bankName}`, `TX-${Math.floor(100000 + Math.random() * 900000)}`);
       refreshWallet();
+      toast.success('Withdrawal processed successfully!');
       setLoading(false);
       setShowWithdraw(false);
       setWithdrawAmount('5000');
@@ -94,12 +96,12 @@ export const Wallet: React.FC = () => {
 
   const handleAddBank = () => {
     if (!bankName || !accNumber || !accName) {
-      alert('Please fill in all bank details.');
+      toast.warning('Please fill in all bank details.');
       return;
     }
 
     if (accNumber.length !== 10) {
-      alert('Account number must be exactly 10 digits.');
+      toast.warning('Account number must be exactly 10 digits.');
       return;
     }
 
@@ -107,6 +109,7 @@ export const Wallet: React.FC = () => {
     setTimeout(() => {
       mockDb.addBankAccount(user.id, bankName, accNumber, accName);
       refreshWallet(); // triggers re-render of linked banks
+      toast.success('Bank account linked successfully!');
       setLoading(false);
       setShowAddBank(false);
       setBankName('');

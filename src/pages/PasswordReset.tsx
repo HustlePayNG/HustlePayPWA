@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sms, Danger, Key, TickCircle } from 'iconsax-react';
-import { TextField, Label, Button, Spinner } from '@heroui/react';
+import { TextField, Label, Button, Spinner, Fieldset, Card } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
 
 export const PasswordReset: React.FC = () => {
@@ -65,7 +65,7 @@ export const PasswordReset: React.FC = () => {
       <BackgroundVideo />
 
       {/* Top Header Navigation */}
-      <div className="flex justify-between items-center w-full mb-6">
+      <div className="relative z-10 flex justify-between items-center w-full mb-6">
         <Button
           onClick={() => navigate('/login')}
           variant="outline"
@@ -79,7 +79,7 @@ export const PasswordReset: React.FC = () => {
         </Button>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+      <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md text-center">
         {step === 1 && (
           <>
             <div className="flex justify-center mb-4">
@@ -133,106 +133,127 @@ export const PasswordReset: React.FC = () => {
         )}
 
         {step < 4 && (
-          <div className="glass border border-zinc-200 shadow-sm rounded-[32px] p-6 text-left mt-8">
+          <Card className="glass border-0 shadow-2xl rounded-[32px] p-6 text-left mt-8 bg-zinc-950/40">
             {step === 1 && (
-              <form onSubmit={handleRequestCode} className="flex flex-col gap-5">
-                <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Email Address</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Sms className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
-                    <input
-                      type="email"
-                      placeholder="you@example.com"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                </TextField>
+              <form onSubmit={handleRequestCode}>
+                <Fieldset>
+                  <Fieldset.Legend className="sr-only">Request Reset Code</Fieldset.Legend>
+                  <Fieldset.Group>
+                    <TextField className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-zinc-500 text-xs font-semibold text-left">Email Address</Label>
+                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
+                        <Sms className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                        <input
+                          type="email"
+                          placeholder="you@example.com"
+                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
+                    </TextField>
+                  </Fieldset.Group>
 
-                {error && <span className="text-[10px] text-danger font-semibold -mt-2 block">{error}</span>}
-                
-                <Button
-                  type="submit"
-                  isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
-                >
-                  {loading && <Spinner size="sm" />}
-                  Send Verification Code
-                </Button>
+                  {error && <span className="text-[10px] text-danger font-semibold mt-2 block">{error}</span>}
+                  
+                  <Fieldset.Actions className="mt-5">
+                    <Button
+                      type="submit"
+                      isDisabled={loading}
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                    >
+                      {loading && <Spinner size="sm" />}
+                      Send Verification Code
+                    </Button>
+                  </Fieldset.Actions>
+                </Fieldset>
               </form>
             )}
 
             {step === 2 && (
-              <form onSubmit={handleVerifyCode} className="flex flex-col gap-5">
-                <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Verification Code</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <Key className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
-                    <input
-                      type="text"
-                      placeholder="123456"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                    />
-                  </div>
-                </TextField>
+              <form onSubmit={handleVerifyCode}>
+                <Fieldset>
+                  <Fieldset.Legend className="sr-only">Verify Code</Fieldset.Legend>
+                  <Fieldset.Group>
+                    <TextField className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-zinc-500 text-xs font-semibold text-left">Verification Code</Label>
+                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
+                        <Key className="text-zinc-455 shrink-0 mr-1" size={18} color="currentColor" variant="Broken" />
+                        <input
+                          type="text"
+                          placeholder="123456"
+                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                        />
+                      </div>
+                    </TextField>
+                  </Fieldset.Group>
 
-                {error && <span className="text-[10px] text-danger font-semibold -mt-2 block">{error}</span>}
-                
-                <Button
-                  type="submit"
-                  isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
-                >
-                  {loading && <Spinner size="sm" />}
-                  Confirm Code
-                </Button>
+                  {error && <span className="text-[10px] text-danger font-semibold mt-2 block">{error}</span>}
+                  
+                  <Fieldset.Actions className="mt-5">
+                    <Button
+                      type="submit"
+                      isDisabled={loading}
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                    >
+                      {loading && <Spinner size="sm" />}
+                      Confirm Code
+                    </Button>
+                  </Fieldset.Actions>
+                </Fieldset>
               </form>
             )}
 
             {step === 3 && (
-              <form onSubmit={handleSetPassword} className="flex flex-col gap-5">
-                <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">New Password</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                    />
-                  </div>
-                </TextField>
+              <form onSubmit={handleSetPassword}>
+                <Fieldset>
+                  <Fieldset.Legend className="sr-only">Set New Password</Fieldset.Legend>
+                  <Fieldset.Group className="flex flex-col gap-5">
+                    <TextField className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-zinc-500 text-xs font-semibold text-left">New Password</Label>
+                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </div>
+                    </TextField>
 
-                <TextField className="flex flex-col gap-1.5 w-full">
-                  <Label className="text-zinc-500 text-xs font-semibold text-left">Confirm New Password</Label>
-                  <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                  </div>
-                </TextField>
+                    <TextField className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-zinc-500 text-xs font-semibold text-left">Confirm New Password</Label>
+                      <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-200 rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12">
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                      </div>
+                    </TextField>
+                  </Fieldset.Group>
 
-                {error && <span className="text-[10px] text-danger font-semibold -mt-2 block">{error}</span>}
-                
-                <Button
-                  type="submit"
-                  isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
-                >
-                  {loading && <Spinner size="sm" />}
-                  Update Password
-                </Button>
+                  {error && <span className="text-[10px] text-danger font-semibold mt-2 block">{error}</span>}
+                  
+                  <Fieldset.Actions className="mt-5">
+                    <Button
+                      type="submit"
+                      isDisabled={loading}
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl shadow-xl shadow-brand-500/10 transition-all flex items-center justify-center gap-2 text-white-force"
+                    >
+                      {loading && <Spinner size="sm" />}
+                      Update Password
+                    </Button>
+                  </Fieldset.Actions>
+                </Fieldset>
               </form>
             )}
-          </div>
+          </Card>
         )}
       </div>
     </div>

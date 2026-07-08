@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { mockDb, type ArtisanProfile } from '../services/mockDb';
 import { useAppStore } from '../store';
 import { ArrowLeft, Gallery, Flash, TickCircle } from 'iconsax-react';
-import { TextArea, Button, Spinner } from '@heroui/react';
+import { TextArea, Button, Spinner, toast } from '@heroui/react';
 
 export const BookingFlow: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,7 +49,7 @@ export const BookingFlow: React.FC = () => {
     
     // Check wallet balance
     if (!wallet || wallet.balance < artisan.pricing.calloutFee) {
-      alert(`Insufficient funds. Your balance is ₦${wallet?.balance.toLocaleString()} but this booking requires a ₦${artisan.pricing.calloutFee.toLocaleString()} call-out fee. Please fund your wallet.`);
+      toast.danger(`Insufficient funds. Your balance is ₦${wallet?.balance.toLocaleString()} but this booking requires a ₦${artisan.pricing.calloutFee.toLocaleString()} call-out fee. Please fund your wallet.`);
       navigate('/wallet');
       return;
     }

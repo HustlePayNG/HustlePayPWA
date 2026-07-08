@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-f0c192c2'], (function (workbox) { 'use strict';
+define(['./workbox-e1d218c3'], (function (workbox) { 'use strict';
 
   self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
@@ -82,11 +82,18 @@ define(['./workbox-f0c192c2'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "index.html",
-    "revision": "0.h63sln4rd7o"
+    "revision": "0.novmia06mi8"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
+  workbox.registerRoute(/\.(?:mp4|webm)$/i, new workbox.CacheFirst({
+    "cacheName": "hustlepay-videos",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 2,
+      maxAgeSeconds: 604800
+    }), new workbox.RangeRequestsPlugin()]
+  }), 'GET');
 
 }));
