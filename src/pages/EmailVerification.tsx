@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { Sms, TickCircle } from 'iconsax-react';
-import { Button, Spinner, Fieldset, Card } from '@heroui/react';
+import { Button, Spinner, Fieldset } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
+import { liquidGlass } from '../components/liquidGlass';
 
 export const EmailVerification: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,23 @@ export const EmailVerification: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [codeError, setCodeError] = useState('');
   const [timer, setTimer] = useState(60);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const instance = liquidGlass(cardRef.current, {
+      scale: -112,
+      chroma: 6,
+      border: 0.07,
+      mapBlur: 12,
+      blur: 3,
+      saturate: 1.5,
+      fallbackBlur: 16
+    });
+    return () => {
+      instance.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -78,7 +96,7 @@ export const EmailVerification: React.FC = () => {
               We sent a verification code to <span className="text-brand-500 font-bold">{user?.email}</span>.
             </p>
 
-            <Card className="glass border-0 rounded-[32px] p-6 mt-8 bg-zinc-950/40">
+            <div ref={cardRef} className="liquid-glass-nav rounded-[32px] p-6 mt-8 relative overflow-hidden">
               <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }}>
                 <Fieldset>
                   <Fieldset.Legend className="sr-only">Enter Verification Code</Fieldset.Legend>
@@ -131,7 +149,7 @@ export const EmailVerification: React.FC = () => {
                   </Fieldset.Actions>
                 </Fieldset>
               </form>
-            </Card>
+            </div>
           </>
         )}
       </div>

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { Eye, EyeSlash, Lock, Sms } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, Fieldset, RadioGroup, Radio, Card } from '@heroui/react';
+import { TextField, Label, Button, Spinner, Fieldset, RadioGroup, Radio } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
+import { liquidGlass } from '../components/liquidGlass';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,23 @@ export const Login: React.FC = () => {
   const [tempRole, setTempRole] = useState<'seeker' | 'artisan'>('seeker');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const instance = liquidGlass(cardRef.current, {
+      scale: -112,
+      chroma: 6,
+      border: 0.07,
+      mapBlur: 12,
+      blur: 3,
+      saturate: 1.5,
+      fallbackBlur: 16
+    });
+    return () => {
+      instance.destroy();
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +90,7 @@ export const Login: React.FC = () => {
       </div>
 
       <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="glass border-0 rounded-[32px] p-6 text-left bg-zinc-950/40">
+        <div ref={cardRef} className="liquid-glass-nav rounded-[32px] p-6 text-left relative overflow-hidden">
           <form onSubmit={handleSubmit}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Sign In Credentials</Fieldset.Legend>
@@ -197,7 +215,7 @@ export const Login: React.FC = () => {
             Don't have an account?{' '}
             <Link to="/signup" className="text-brand-500 font-bold hover:underline">Sign up</Link>
           </p>
-        </Card>
+        </div>
       </div>
     </div>
   );

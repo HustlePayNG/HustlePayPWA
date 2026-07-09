@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { User as UserIcon, Sms, Call, Location } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, RadioGroup, Radio, Checkbox, Fieldset, Card } from '@heroui/react';
+import { TextField, Label, Button, Spinner, RadioGroup, Radio, Checkbox, Fieldset } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
+import { liquidGlass } from '../components/liquidGlass';
 
 export const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +19,23 @@ export const Signup: React.FC = () => {
   // NDPR compliance unbundled consents (GEN-7)
   const [termsConsent, setTermsConsent] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const instance = liquidGlass(cardRef.current, {
+      scale: -112,
+      chroma: 6,
+      border: 0.07,
+      mapBlur: 12,
+      blur: 3,
+      saturate: 1.5,
+      fallbackBlur: 16
+    });
+    return () => {
+      instance.destroy();
+    };
+  }, []);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -111,7 +129,7 @@ export const Signup: React.FC = () => {
       </div>
 
       <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="glass border-0 rounded-[32px] p-6 text-left bg-zinc-950/40">
+        <div ref={cardRef} className="liquid-glass-nav rounded-[32px] p-6 text-left relative overflow-hidden">
           <form onSubmit={handleSignup}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Create Account details</Fieldset.Legend>
@@ -257,7 +275,7 @@ export const Signup: React.FC = () => {
             Already have an account?{' '}
             <Link to="/login" className="text-brand-500 font-bold hover:underline">Sign in</Link>
           </p>
-        </Card>
+        </div>
       </div>
     </div>
   );

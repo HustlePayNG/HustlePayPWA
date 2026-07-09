@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb } from '../services/mockDb';
-import { 
+import {
   Home, SearchNormal1, MessageText, NotificationBing, CloseCircle
 } from 'iconsax-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { liquidGlass } from './liquidGlass';
 
 // Standard layout
 
@@ -58,8 +59,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, activeMode, unreadCount, refreshNotifications } = useAppStore();
+  const isArtisanPending = activeMode === 'artisan' && user?.kycStatus !== 'approved';
   
   const [showNotifications, setShowNotifications] = useState(false);
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     refreshNotifications();
@@ -68,6 +72,38 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }, 8000); // Polling simulation
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const instances: any[] = [];
+
+    if (navRef.current) {
+      instances.push(liquidGlass(navRef.current, {
+        scale: -112,
+        chroma: 6,
+        border: 0.07,
+        mapBlur: 12,
+        blur: 3,
+        saturate: 1.5,
+        fallbackBlur: 16
+      }));
+    }
+
+    if (headerRef.current) {
+      instances.push(liquidGlass(headerRef.current, {
+        scale: -112,
+        chroma: 6,
+        border: 0.07,
+        mapBlur: 12,
+        blur: 3,
+        saturate: 1.5,
+        fallbackBlur: 16
+      }));
+    }
+
+    return () => {
+      instances.forEach(ins => ins.destroy());
+    };
+  }, [user, isArtisanPending, location.pathname]);
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -87,21 +123,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     return <div className="flex-1 flex flex-col bg-zinc-950 text-white">{children}</div>;
   }
 
-  // Check if artisan application is approved
-  const isArtisanPending = activeMode === 'artisan' && user.kycStatus !== 'approved';
+
 
   return (
-    <div className="flex-1 flex flex-col bg-zinc-950 text-white relative min-h-screen">
-      
+    <div className="flex-1 flex flex-col bg-zinc-950 text-white relative min-h-full">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 flex items-center justify-between px-4 h-16 glass border-b border-zinc-800">
+      <header
+        ref={headerRef}
+        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-16 liquid-glass-header border-b border-zinc-800 lg:absolute"
+      >
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleNav('/')}>
           <img src="/logo.png" className="h-8 w-auto" alt="HustlePay Logo" />
         </div>
 
         {/* Action icons */}
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => {
               setShowNotifications(!showNotifications);
               mockDb.markNotificationsAsRead(user.id);
@@ -147,12 +184,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col pb-20 overflow-x-hidden">
+      <main className="flex-1 flex flex-col pt-16 pb-20 overflow-x-hidden">
         {children}
       </main>
 
       {!isArtisanPending && (
-        <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit glass border-0 h-11 rounded-full p-0 flex flex-row flex-nowrap items-center justify-center gap-0 overflow-hidden shadow-lg">
+        <div
+          ref={navRef}
+          role="navigation"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit liquid-glass-nav h-11 rounded-full p-0 flex flex-row flex-nowrap items-center justify-center gap-0 overflow-hidden"
+        >
           <TabButton
             isActive={currentTab === 'home'}
             onClick={() => handleNav('/')}
@@ -185,7 +226,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             }
             label="Me"
           />
-        </nav>
+        </div>
       )}
     </div>
   );

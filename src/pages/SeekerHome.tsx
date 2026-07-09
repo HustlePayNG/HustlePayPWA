@@ -4,7 +4,7 @@ import { useAppStore } from '../store';
 import { mockDb, type ArtisanProfile } from '../services/mockDb';
 import {
   SearchNormal1, Setting4, Star, Location, CloseCircle,
-  Heart, MessageText, Flash
+  Heart, MessageText
 } from 'iconsax-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
@@ -171,10 +171,6 @@ export const SeekerHome: React.FC = () => {
         {/* Section header */}
         <div className="flex items-center justify-between px-5 mb-4">
           <div className="flex items-center gap-2">
-            {/* Animated spark icon */}
-            <div className="h-7 w-7 rounded-full bg-brand-500/15 flex items-center justify-center">
-              <Star size={14} color="currentColor" variant="Broken" className="text-brand-400 animate-pulse" />
-            </div>
             <span className="text-sm font-bold text-white">Recommended for You</span>
           </div>
           <button
@@ -304,10 +300,7 @@ export const SeekerHome: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-full bg-brand-500/15 flex items-center justify-center">
-                  <Flash size={14} color="currentColor" variant="Broken" className="text-brand-400" />
-                </div>
-                <span className="text-sm font-bold" style={{ color: 'white' }}>Top Categories</span>
+                <span className="text-sm font-bold text-white">Top Categories</span>
               </div>
               <button
                 onClick={() => navigate('/discover')}

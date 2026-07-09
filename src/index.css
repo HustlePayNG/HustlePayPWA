@@ -62,8 +62,6 @@ html, body {
 
 body {
   @apply bg-zinc-50 text-zinc-900 font-sans antialiased overflow-x-hidden;
-  background-image: radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 100%);
-  background-attachment: fixed;
 }
 
 /* Disable and ban all shadows in the project */
@@ -105,11 +103,22 @@ body {
    LIGHT THEME OVERRIDES (White base with high contrast)
    ========================================================================== */
 
-/* Main page/container backgrounds */
+/* Main page/container backgrounds - Pink Illustrated Cats Background */
+body,
 .bg-zinc-950,
 .bg-zinc-955,
 .bg-zinc-900 {
+  background-image: url('/bg-cats.svg') !important;
+  background-repeat: repeat !important;
+  background-size: 360px !important;
+  background-attachment: fixed !important;
   background-color: #ffffff !important;
+}
+
+/* Ensure the desktop preview phone border/frame stays dark solid zinc-950 */
+.lg\:w-\[410px\] {
+  background-image: none !important;
+  background-color: #09090b !important;
 }
 
 /* Content cards, list items, and input text fields */
@@ -231,3 +240,109 @@ nav.fixed {
     color: #ffffff !important;
   }
 }
+
+/* Premium Liquid Glass Bottom Navigation */
+.liquid-glass-nav {
+  background: linear-gradient(180deg, rgba(14, 14, 22, 0.18), rgba(14, 14, 22, 0.32)) !important;
+  border: none !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    inset 0 -8px 20px rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Premium Liquid Glass Header (Flat style, no outer drop shadow) */
+.liquid-glass-header {
+  background: linear-gradient(180deg, rgba(14, 14, 22, 0.18), rgba(14, 14, 22, 0.32)) !important;
+  border: none !important;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    inset 0 -8px 20px rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13) !important;
+  backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Primary/brand color text overrides to black */
+.text-brand,
+.text-brand-500,
+.text-brand-600,
+.text-brand-400,
+.text-brand-300,
+.text-brand-700,
+.text-primary,
+.text-primary-500,
+.text-primary-600,
+.text-primary-400,
+.text-primary-300 {
+  color: #000000 !important;
+}
+
+/* Primary/brand background elements (buttons) overrides to white */
+button.bg-brand-500,
+button.bg-brand,
+button.bg-brand-600,
+button.bg-primary-500,
+button.bg-primary,
+a.bg-brand-500,
+a.bg-brand,
+a.bg-brand-600,
+a.bg-primary-500,
+a.bg-primary,
+[role="button"].bg-brand-500,
+[role="button"].bg-brand,
+[role="button"].bg-brand-600,
+[role="button"].bg-primary-500,
+[role="button"].bg-primary {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Force child icons/spans inside white buttons to be black for readability */
+button.bg-brand-500 *,
+button.bg-brand *,
+button.bg-brand-600 *,
+button.bg-primary-500 *,
+a.bg-brand-500 *,
+a.bg-brand *,
+a.bg-brand-600 *,
+a.bg-primary-500 *,
+[role="button"].bg-brand-500 *,
+[role="button"].bg-brand *,
+[role="button"].bg-brand-600 *,
+[role="button"].bg-primary-500 * {
+  color: #000000 !important;
+}
+
+/* Subtle light gray hover effect for white primary buttons */
+button.bg-brand-500:hover,
+button.bg-brand:hover,
+button.bg-brand-600:hover,
+button.bg-primary-500:hover,
+.bg-brand-500[role="button"]:hover,
+.bg-brand-600[role="button"]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Bottom Navigation Bar specific state overrides */
+.liquid-glass-nav button {
+  color: #000000 !important; /* Inactive states are black */
+}
+
+/* Force the active tab to use the primary brand color and white text */
+.liquid-glass-nav .bg-brand-500,
+.liquid-glass-nav [class*="bg-brand-500"] {
+  background-color: #33658a !important; /* primary color */
+  color: #ffffff !important; /* high contrast white text */
+  border: none !important;
+}
+
+.liquid-glass-nav .bg-brand-500 * {
+  color: #ffffff !important;
+}
+

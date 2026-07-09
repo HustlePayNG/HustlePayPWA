@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sms, Danger, Key, TickCircle } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, Fieldset, Card } from '@heroui/react';
+import { TextField, Label, Button, Spinner, Fieldset } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
+import { liquidGlass } from '../components/liquidGlass';
 
 export const PasswordReset: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,23 @@ export const PasswordReset: React.FC = () => {
   const [codeError, setCodeError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const instance = liquidGlass(cardRef.current, {
+      scale: -112,
+      chroma: 6,
+      border: 0.07,
+      mapBlur: 12,
+      blur: 3,
+      saturate: 1.5,
+      fallbackBlur: 16
+    });
+    return () => {
+      instance.destroy();
+    };
+  }, []);
 
   const handleRequestCode = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +162,7 @@ export const PasswordReset: React.FC = () => {
         )}
 
         {step < 4 && (
-          <Card className="glass border-0 rounded-[32px] p-6 text-left mt-8 bg-zinc-950/40">
+          <div ref={cardRef} className="liquid-glass-nav rounded-[32px] p-6 text-left mt-8 relative overflow-hidden">
             {step === 1 && (
               <form onSubmit={handleRequestCode}>
                 <Fieldset>
@@ -282,7 +300,7 @@ export const PasswordReset: React.FC = () => {
                 </Fieldset>
               </form>
             )}
-          </Card>
+          </div>
         )}
       </div>
     </div>
