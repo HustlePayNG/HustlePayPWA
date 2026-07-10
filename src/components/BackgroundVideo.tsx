@@ -3,12 +3,11 @@ import React, { memo } from 'react';
 const BackgroundVideoComponent: React.FC = () => {
   return (
     <div 
-      className="absolute inset-0 -z-20"
+      className="absolute inset-0 z-0"
       style={{
         backgroundImage: "url('/bg-cats.svg')",
         backgroundRepeat: "repeat",
         backgroundSize: "360px",
-        backgroundAttachment: "fixed",
         backgroundColor: "#ffffff"
       }}
     >

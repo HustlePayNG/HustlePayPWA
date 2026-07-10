@@ -129,7 +129,7 @@ export const Signup: React.FC = () => {
       </div>
 
       <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div ref={cardRef} className="liquid-glass-nav rounded-[32px] p-6 text-left relative overflow-hidden">
+        <div ref={cardRef} className="liquid-glass-auth rounded-[32px] p-6 text-left relative overflow-hidden">
           <form onSubmit={handleSignup}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Create Account details</Fieldset.Legend>
