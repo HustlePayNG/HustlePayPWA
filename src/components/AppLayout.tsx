@@ -63,7 +63,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     refreshNotifications();
@@ -78,18 +77,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
     if (navRef.current) {
       instances.push(liquidGlass(navRef.current, {
-        scale: -112,
-        chroma: 6,
-        border: 0.07,
-        mapBlur: 12,
-        blur: 3,
-        saturate: 1.5,
-        fallbackBlur: 16
-      }));
-    }
-
-    if (headerRef.current) {
-      instances.push(liquidGlass(headerRef.current, {
         scale: -112,
         chroma: 6,
         border: 0.07,
@@ -123,42 +110,31 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     return <div className="flex-1 flex flex-col bg-zinc-950 text-white">{children}</div>;
   }
 
-
-
   return (
     <div className="flex-1 flex flex-col bg-zinc-950 text-white relative min-h-full">
-      {/* Top Header */}
-      <header
-        ref={headerRef}
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-16 liquid-glass-header border-b border-zinc-800 lg:absolute"
-      >
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleNav('/')}>
-          <img src="/logo.png" className="h-8 w-auto" alt="HustlePay Logo" />
-        </div>
-
-        {/* Action icons */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              mockDb.markNotificationsAsRead(user.id);
-              refreshNotifications();
-            }}
-            className="p-2 hover:bg-zinc-800/50 rounded-xl transition-colors relative"
-          >
-            <NotificationBing size={20} color="currentColor" variant="Broken" className="text-zinc-200" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-bold">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
+      {/* Floating Notifications Button */}
+      <div className="fixed top-3.5 right-4 z-45 lg:absolute">
+        <button
+          onClick={() => {
+            setShowNotifications(!showNotifications);
+            mockDb.markNotificationsAsRead(user.id);
+            refreshNotifications();
+          }}
+          className="p-2.5 rounded-full glass border border-zinc-700 hover:bg-zinc-800/80 transition-colors relative cursor-pointer flex items-center justify-center bg-zinc-900/60 backdrop-blur-md text-white h-10 w-10 shadow-lg"
+          aria-label="Toggle notifications"
+        >
+          <NotificationBing size={18} color="currentColor" variant="Broken" className="text-zinc-200" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-zinc-950">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Notifications Floating Panel */}
       {showNotifications && (
-        <div className="absolute top-16 right-4 left-4 lg:right-6 lg:left-auto lg:w-80 z-50 glass rounded-2xl shadow-2xl p-4 border border-zinc-800 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-4">
+        <div className="absolute top-14 right-4 left-4 lg:right-6 lg:left-auto lg:w-80 z-50 glass rounded-2xl shadow-2xl p-4 border border-zinc-800 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-4">
           <div className="flex justify-between items-center mb-3">
             <span className="font-bold text-sm text-white">Notifications</span>
             <button onClick={() => setShowNotifications(false)} className="text-zinc-400 hover:text-white">
@@ -184,7 +160,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col pt-16 pb-20 overflow-x-hidden">
+      <main className="flex-1 flex flex-col pt-10 pb-20 overflow-x-hidden">
         {children}
       </main>
 

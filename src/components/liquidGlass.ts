@@ -25,48 +25,69 @@ function ensureDefs(): SVGDefsElement {
   return svgDefs;
 }
 
+const mapCache: Record<string, string> = {};
+
 // Displacement map, gradient-difference method: a red left->right ramp
 // encodes X displacement, a blue top->bottom ramp encodes Y ("difference"
 // keeps both since the channels are disjoint). A blurred, inset 50%-gray
 // rounded rect neutralizes the interior, confining the refraction bulge to
 // an edge band whose curvature is set by the blur radius.
 function makeMap(w: number, h: number, radius: number, border: number, mapBlur: number): string {
+  // Limit max dimension to 256px to keep canvas drawing and dataURL conversion extremely fast
+  const MAX_DIM = 256;
+  const maxVal = Math.max(w, h);
+  let scale = 1;
+  if (maxVal > MAX_DIM) {
+    scale = MAX_DIM / maxVal;
+  }
+  
+  const sw = Math.round(w * scale);
+  const sh = Math.round(h * scale);
+  const sradius = radius * scale;
+  const smapBlur = mapBlur * scale;
+
+  const key = `${sw}_${sh}_${Math.round(sradius)}_${border}_${Math.round(smapBlur)}`;
+  if (mapCache[key]) return mapCache[key];
+
   const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = sw;
+  canvas.height = sh;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  const gx = ctx.createLinearGradient(0, 0, w, 0);
+  const gx = ctx.createLinearGradient(0, 0, sw, 0);
   gx.addColorStop(0, "rgb(0,0,0)");
   gx.addColorStop(1, "rgb(255,0,0)");
   ctx.fillStyle = gx;
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, sw, sh);
 
-  const gy = ctx.createLinearGradient(0, 0, 0, h);
+  const gy = ctx.createLinearGradient(0, 0, 0, sh);
   gy.addColorStop(0, "rgb(0,0,0)");
   gy.addColorStop(1, "rgb(0,0,255)");
   ctx.globalCompositeOperation = "difference";
   ctx.fillStyle = gy;
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, sw, sh);
 
   ctx.globalCompositeOperation = "source-over";
-  const inset = border * Math.min(w, h);
-  ctx.filter = "blur(" + mapBlur + "px)";
+  const inset = border * Math.min(sw, sh);
+  ctx.filter = "blur(" + smapBlur + "px)";
   ctx.fillStyle = "rgba(128,128,128,0.93)";
   ctx.beginPath();
   
   // roundRect compatibility fallback
   if (typeof ctx.roundRect === "function") {
-    ctx.roundRect(inset, inset, w - inset * 2, h - inset * 2, Math.max(radius - inset, 2));
+    ctx.roundRect(inset, inset, sw - inset * 2, sh - inset * 2, Math.max(sradius - inset, 2));
   } else {
     // Basic rectangle fallback if roundRect is not supported
-    ctx.rect(inset, inset, w - inset * 2, h - inset * 2);
+    ctx.rect(inset, inset, sw - inset * 2, sh - inset * 2);
   }
   
   ctx.fill();
   ctx.filter = "none";
-  return canvas.toDataURL();
+  
+  const dataUrl = canvas.toDataURL();
+  mapCache[key] = dataUrl;
+  return dataUrl;
 }
 
 // Three displacement passes at staggered scales (R strongest), channels

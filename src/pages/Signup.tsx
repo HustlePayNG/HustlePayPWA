@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { User as UserIcon, Sms, Call, Location } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, RadioGroup, Radio, Checkbox, Fieldset } from '@heroui/react';
+import { TextField, Label, Button, Spinner, Fieldset } from '@heroui/react';
+import CustomCheckbox from '../components/CustomCheckbox';
 import BackgroundVideo from '../components/BackgroundVideo';
 import { liquidGlass } from '../components/liquidGlass';
 
@@ -14,8 +15,8 @@ export const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [role, setRole] = useState<'seeker' | 'artisan'>('seeker');
-  
+  const role: 'seeker' | 'artisan' = 'seeker';
+
   // NDPR compliance unbundled consents (GEN-7)
   const [termsConsent, setTermsConsent] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -36,7 +37,7 @@ export const Signup: React.FC = () => {
       instance.destroy();
     };
   }, []);
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [nameError, setNameError] = useState('');
@@ -111,19 +112,18 @@ export const Signup: React.FC = () => {
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
-          <span className="text-xs font-bold">Login</span>
         </Button>
       </div>
 
       <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md text-center flex flex-col items-center gap-4">
         {/* Brand Logo */}
-        <img 
-          src="/logo.png" 
-          className="h-12 w-auto object-contain mb-1" 
-          alt="HustlePay Logo" 
+        <img
+          src="/real logo.svg"
+          className="h-5 w-auto object-contain mb-1"
+          alt="HustlePay Logo"
         />
         <div>
-          <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Create Account</h2>
+          <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Create Account</h2>
           <p className="mt-1 text-xs text-zinc-555 font-light">Register to find certified artisans or offer services</p>
         </div>
       </div>
@@ -133,21 +133,8 @@ export const Signup: React.FC = () => {
           <form onSubmit={handleSignup}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Create Account details</Fieldset.Legend>
-              
-              <Fieldset.Group className="flex flex-col gap-5">
-                {/* Role Selector */}
-                <div className="flex flex-col gap-2 w-full text-left">
-                  <span className="text-zinc-500 text-xs font-semibold block">Choose your primary role</span>
-                  <RadioGroup
-                    value={role}
-                    onChange={(val) => setRole(val as 'seeker' | 'artisan')}
-                    orientation="horizontal"
-                  >
-                    <Radio value="seeker" className="text-xs text-zinc-800">Seeker (Customer)</Radio>
-                    <Radio value="artisan" className="text-xs text-zinc-800">Artisan (Provider)</Radio>
-                  </RadioGroup>
-                </div>
 
+              <Fieldset.Group className="flex flex-col gap-5">
                 <TextField className="flex flex-col gap-1.5 w-full">
                   <Label className={`text-xs font-semibold text-left transition-colors ${nameError ? 'text-danger' : 'text-zinc-505'}`}>Full Name</Label>
                   <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${nameError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
@@ -230,27 +217,25 @@ export const Signup: React.FC = () => {
 
                 {/* NDPR compliance unbundled consent options (GEN-7) */}
                 <div className="flex flex-col gap-3.5 mt-2">
-                  <Checkbox
+                  <CustomCheckbox
                     isSelected={termsConsent}
-                    onChange={(val) => {
-                      setTermsConsent(val);
-                      if (val) setConsentError('');
+                    onChange={(checked) => {
+                      setTermsConsent(checked);
+                      if (checked) setConsentError('');
                     }}
-                    className="text-zinc-500 text-xs leading-relaxed cursor-pointer select-none text-left text-zinc-505"
                   >
                     I consent to the collection, processing, and storage of my personal details (N NIN, ID, Address) in accordance with the HustlePay Privacy Policy. (Required)
-                  </Checkbox>
+                  </CustomCheckbox>
                   {consentError && (
-                    <span className="text-[10px] text-danger font-semibold text-left">{consentError}</span>
+                    <span className="text-[10px] text-danger font-semibold text-left -mt-1 block">{consentError}</span>
                   )}
-                  
-                  <Checkbox
+
+                  <CustomCheckbox
                     isSelected={marketingConsent}
                     onChange={setMarketingConsent}
-                    className="text-zinc-500 text-xs leading-relaxed cursor-pointer select-none text-left text-zinc-555"
                   >
                     Opt-in to receiving marketing and promotional newsletters. (Optional)
-                  </Checkbox>
+                  </CustomCheckbox>
                 </div>
               </Fieldset.Group>
 
@@ -262,7 +247,7 @@ export const Signup: React.FC = () => {
                 <Button
                   type="submit"
                   isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
+                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white-force rounded-2xl transition-all flex items-center justify-center gap-2"
                 >
                   {loading && <Spinner size="sm" />}
                   <span>Sign Up</span>

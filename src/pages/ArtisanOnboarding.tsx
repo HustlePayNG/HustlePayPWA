@@ -6,10 +6,11 @@ import {
   Send2, Danger
 } from 'iconsax-react';
 import { 
-  TextField, Label, Input, TextArea, Checkbox, 
+  TextField, Label, Input, TextArea, 
   Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem,
   Button, RadioGroup, Radio, toast, Fieldset
 } from '@heroui/react';
+import CustomCheckbox from '../components/CustomCheckbox';
 
 export const ArtisanOnboarding: React.FC = () => {
   const { user, refreshUser } = useAppStore();
@@ -314,38 +315,38 @@ export const ArtisanOnboarding: React.FC = () => {
               </p>
 
               <Fieldset.Group className="flex flex-col gap-3.5 w-full">
-                <Checkbox
+                <CustomCheckbox
                   isSelected={kycDocs.govId}
-                  onChange={(val) => setKycDocs(k => ({ ...k, govId: val }))}
-                  className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
+                  onChange={(checked) => setKycDocs(k => ({ ...k, govId: checked }))}
+                  className="flex-row-reverse items-center justify-between p-3.5 border border-zinc-200 rounded-2xl bg-zinc-50/30 max-w-full m-0 cursor-pointer text-left w-full"
                 >
                   <div>
-                    <div className="font-bold text-xs text-white">Government ID</div>
-                    <div className="text-[10px] text-zinc-500">NIN, Voter's Card, or Passport</div>
+                    <div className="font-bold text-xs text-zinc-900">Government ID</div>
+                    <div className="text-[10px] text-zinc-550">NIN, Voter's Card, or Passport</div>
                   </div>
-                </Checkbox>
+                </CustomCheckbox>
 
-                <Checkbox
+                <CustomCheckbox
                   isSelected={kycDocs.certificate}
-                  onChange={(val) => setKycDocs(k => ({ ...k, certificate: val }))}
-                  className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
+                  onChange={(checked) => setKycDocs(k => ({ ...k, certificate: checked }))}
+                  className="flex-row-reverse items-center justify-between p-3.5 border border-zinc-200 rounded-2xl bg-zinc-50/30 max-w-full m-0 cursor-pointer text-left w-full"
                 >
                   <div>
-                    <div className="font-bold text-xs text-white">Professional Certificate</div>
-                    <div className="text-[10px] text-zinc-500">Trade test, training certificate</div>
+                    <div className="font-bold text-xs text-zinc-900">Professional Certificate</div>
+                    <div className="text-[10px] text-zinc-555">Trade test, training certificate</div>
                   </div>
-                </Checkbox>
+                </CustomCheckbox>
 
-                <Checkbox
+                <CustomCheckbox
                   isSelected={kycDocs.photo}
-                  onChange={(val) => setKycDocs(k => ({ ...k, photo: val }))}
-                  className="flex items-center justify-between p-3.5 border border-zinc-800 rounded-2xl bg-zinc-900/30 max-w-full m-0 cursor-pointer text-left w-full"
+                  onChange={(checked) => setKycDocs(k => ({ ...k, photo: checked }))}
+                  className="flex-row-reverse items-center justify-between p-3.5 border border-zinc-200 rounded-2xl bg-zinc-50/30 max-w-full m-0 cursor-pointer text-left w-full"
                 >
                   <div>
-                    <div className="font-bold text-xs text-white">Passport Photograph</div>
-                    <div className="text-[10px] text-zinc-500">For public search avatar</div>
+                    <div className="font-bold text-xs text-zinc-900">Passport Photograph</div>
+                    <div className="text-[10px] text-zinc-555">Recent passport size photo</div>
                   </div>
-                </Checkbox>
+                </CustomCheckbox>
               </Fieldset.Group>
 
               <Fieldset.Actions className="flex gap-3 mt-5">
@@ -379,17 +380,17 @@ export const ArtisanOnboarding: React.FC = () => {
               <Fieldset.Group className="flex flex-col gap-2.5 max-h-[250px] overflow-y-auto pr-1 text-xs w-full">
                 {availability.map((day, idx) => (
                   <div key={day.weekday} className="flex items-center justify-between p-2.5 border border-zinc-855 rounded-xl bg-zinc-900/20 w-full">
-                    <Checkbox
+                    <CustomCheckbox
                       isSelected={day.enabled}
-                      onChange={(val) => {
+                      onChange={(checked) => {
                         const updated = [...availability];
-                        updated[idx].enabled = val;
+                        updated[idx].enabled = checked;
                         setAvailability(updated);
                       }}
-                      className="text-xs font-semibold text-white cursor-pointer"
+                      className="text-xs font-semibold text-zinc-900 cursor-pointer"
                     >
                       {day.weekday}
-                    </Checkbox>
+                    </CustomCheckbox>
                     {day.enabled && (
                       <div className="flex items-center gap-1.5">
                         <input

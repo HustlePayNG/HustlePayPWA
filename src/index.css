@@ -1,7 +1,5 @@
 @import "tailwindcss";
-@import "@heroui/react/styles";
-
-@source "../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
+@import "../node_modules/@heroui/styles/dist/heroui.min.css";
 
 /* ── Supreme font — local variable font ───────────────────────── */
 @font-face {
@@ -103,12 +101,12 @@ body {
    LIGHT THEME OVERRIDES (White base with high contrast)
    ========================================================================== */
 
-/* Main page/container backgrounds - Pink Illustrated Cats Background */
+/* Main page/container backgrounds - Pink Illustrated Cats Background (Soften version) */
 body,
 .bg-zinc-950,
 .bg-zinc-955,
 .bg-zinc-900 {
-  background-image: url('/bg-cats.svg') !important;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('/bg-cats.svg') !important;
   background-repeat: repeat !important;
   background-size: 360px !important;
   background-attachment: fixed !important;
@@ -295,7 +293,7 @@ nav.fixed {
   color: #000000 !important;
 }
 
-/* Primary/brand background elements (buttons) overrides to white */
+/* Primary/brand background elements (buttons) overrides to brand blue */
 button.bg-brand-500,
 button.bg-brand,
 button.bg-brand-600,
@@ -311,12 +309,12 @@ a.bg-primary,
 [role="button"].bg-brand-600,
 [role="button"].bg-primary-500,
 [role="button"].bg-primary {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #e2e8f0 !important;
+  background-color: #33658a !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
-/* Force child icons/spans inside white buttons to be black for readability */
+/* Force child icons/spans inside primary buttons to be white for readability */
 button.bg-brand-500 *,
 button.bg-brand *,
 button.bg-brand-600 *,
@@ -329,17 +327,17 @@ a.bg-primary-500 *,
 [role="button"].bg-brand *,
 [role="button"].bg-brand-600 *,
 [role="button"].bg-primary-500 * {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
-/* Subtle light gray hover effect for white primary buttons */
+/* Darker blue hover effect for primary buttons */
 button.bg-brand-500:hover,
 button.bg-brand:hover,
 button.bg-brand-600:hover,
 button.bg-primary-500:hover,
 .bg-brand-500[role="button"]:hover,
 .bg-brand-600[role="button"]:hover {
-  background-color: #f1f5f9 !important;
+  background-color: #274e6c !important;
 }
 
 /* Bottom Navigation Bar specific state overrides */
@@ -357,5 +355,30 @@ button.bg-primary-500:hover,
 
 .liquid-glass-nav .bg-brand-500 * {
   color: #ffffff !important;
+}
+
+/* Ensure HeroUI Checkbox indicator box is visible and colored properly */
+label span:nth-of-type(2) {
+  border: 2px solid #94a3b8 !important;
+  background-color: transparent !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+label:has(input:checked) span:nth-of-type(2) {
+  background-color: #33658a !important;
+  border-color: #33658a !important;
+}
+
+label:has(input:checked) span:nth-of-type(2) svg {
+  opacity: 1 !important;
+  color: #ffffff !important;
+  display: block !important;
+  width: 12px !important;
+  height: 12px !important;
 }
 

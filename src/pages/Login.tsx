@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { Eye, EyeSlash, Lock, Sms } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, Fieldset, RadioGroup, Radio } from '@heroui/react';
+import { TextField, Label, Button, Spinner, Fieldset } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
 import { liquidGlass } from '../components/liquidGlass';
 
@@ -14,7 +14,7 @@ export const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [tempRole, setTempRole] = useState<'seeker' | 'artisan'>('seeker');
+  const tempRole: 'seeker' | 'artisan' = 'seeker';
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -38,7 +38,7 @@ export const Login: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     let hasError = false;
-    
+
     if (!email) {
       setEmailError('Please enter your email.');
       hasError = true;
@@ -78,13 +78,12 @@ export const Login: React.FC = () => {
 
       <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md text-center flex flex-col items-center gap-4">
         {/* Brand Logo */}
-        <img 
-          src="/logo.png" 
-          className="h-12 w-auto object-contain mb-1" 
-          alt="HustlePay Logo" 
+        <img
+          src="/real logo.svg"
+          className="h-5 w-auto object-contain mb-1"
+          alt="HustlePay Logo"
         />
         <div>
-          <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Welcome to HustlePay</h2>
           <p className="mt-1 text-xs text-zinc-555 font-light">Sign in to book artisans or manage jobs</p>
         </div>
       </div>
@@ -94,21 +93,8 @@ export const Login: React.FC = () => {
           <form onSubmit={handleSubmit}>
             <Fieldset>
               <Fieldset.Legend className="sr-only">Sign In Credentials</Fieldset.Legend>
-              
+
               <Fieldset.Group className="flex flex-col gap-5">
-                {/* Temp Switch for Demoing */}
-                <div className="flex flex-col gap-2 w-full text-left bg-brand-500/5 p-3 rounded-2xl border border-brand-500/20">
-                  <span className="text-brand-300 text-[10px] uppercase font-bold tracking-wider">Demo Access Mode</span>
-                  <RadioGroup
-                    value={tempRole}
-                    onChange={(val) => setTempRole(val as 'seeker' | 'artisan')}
-                    orientation="horizontal"
-                    className="mt-0.5"
-                  >
-                    <Radio value="seeker" className="text-xs text-zinc-300">Seeker</Radio>
-                    <Radio value="artisan" className="text-xs text-zinc-300">Artisan</Radio>
-                  </RadioGroup>
-                </div>
 
                 <TextField className="flex flex-col gap-1.5 w-full">
                   <Label className={`text-xs font-semibold text-left transition-colors ${emailError ? 'text-danger' : 'text-zinc-505'}`}>Email Address</Label>
@@ -165,7 +151,7 @@ export const Login: React.FC = () => {
                 <Button
                   type="submit"
                   isDisabled={loading}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
+                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white-force rounded-2xl transition-all flex items-center justify-center gap-2"
                 >
                   {loading && <Spinner size="sm" />}
                   <span>Sign In</span>
@@ -180,7 +166,7 @@ export const Login: React.FC = () => {
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200"></div></div>
               <div className="relative flex justify-center text-[10px]"><span className="px-2 bg-white text-zinc-550 uppercase tracking-widest font-bold">Or continue with</span></div>
             </div>
-            
+
             <div className="flex justify-center items-center gap-4 mt-1">
               <Button
                 variant="outline"
@@ -194,9 +180,9 @@ export const Login: React.FC = () => {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
                 </svg>
               </Button>
-              
+
               <div className="w-px h-5 bg-zinc-200"></div>
-              
+
               <Button
                 variant="outline"
                 className="h-10 w-10 p-0 min-w-0 border-0 hover:bg-zinc-50 rounded-full flex items-center justify-center bg-transparent"

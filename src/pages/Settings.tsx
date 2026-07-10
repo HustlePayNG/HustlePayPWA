@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { User, Call, Location, ShieldSecurity } from 'iconsax-react';
-import { TextField, Label, Input, Checkbox, Button, Spinner, toast, Fieldset } from '@heroui/react';
+import { TextField, Label, Input, Button, Spinner, toast, Fieldset } from '@heroui/react';
+import CustomCheckbox from '../components/CustomCheckbox';
 
 export const Settings: React.FC = () => {
   const { user, updateUserProfile } = useAppStore();
@@ -148,21 +149,20 @@ export const Settings: React.FC = () => {
           </Fieldset.Legend>
 
           <Fieldset.Group className="flex flex-col gap-3.5 text-xs text-zinc-400 w-full">
-            <Checkbox
+            <CustomCheckbox
               isSelected={true}
               isDisabled
-              className="flex items-start gap-1 max-w-full m-0 cursor-not-allowed text-zinc-500 text-xs leading-relaxed"
+              onChange={() => {}}
             >
               Allow HustlePay to process KYC records, voter certificates, and location services to match artisans with seeker requests. (Mandatory for service account)
-            </Checkbox>
+            </CustomCheckbox>
 
-            <Checkbox
+            <CustomCheckbox
               isSelected={marketingConsent}
               onChange={setMarketingConsent}
-              className="flex items-start gap-1 max-w-full m-0 cursor-pointer text-zinc-400 text-xs leading-relaxed"
             >
               Opt-in to newsletter distribution and periodic marketing campaigns.
-            </Checkbox>
+            </CustomCheckbox>
           </Fieldset.Group>
         </Fieldset>
 

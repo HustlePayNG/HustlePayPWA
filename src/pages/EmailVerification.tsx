@@ -81,7 +81,7 @@ export const EmailVerification: React.FC = () => {
             <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-success-500/10 text-success-500">
               <TickCircle size={36} color="currentColor" variant="Broken" />
             </div>
-            <h2 className="text-2xl font-black text-zinc-900">Email Verified!</h2>
+            <h2 className="text-2xl font-medium text-zinc-900">Email Verified!</h2>
             <p className="text-zinc-550 text-xs font-light">Redirecting you to dashboard...</p>
           </div>
         ) : (
@@ -91,12 +91,12 @@ export const EmailVerification: React.FC = () => {
                 <Sms size={32} color="currentColor" variant="Broken" />
               </div>
             </div>
-            <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Verify Your Email</h2>
+            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Verify Your Email</h2>
             <p className="mt-2 text-xs text-zinc-555 font-light">
               We sent a verification code to <span className="text-brand-500 font-bold">{user?.email}</span>.
             </p>
 
-            <div ref={cardRef} className="liquid-glass-nav rounded-[32px] p-6 mt-8 relative overflow-hidden">
+            <div ref={cardRef} className="liquid-glass-auth rounded-[32px] p-6 mt-8 relative overflow-hidden">
               <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }}>
                 <Fieldset>
                   <Fieldset.Legend className="sr-only">Enter Verification Code</Fieldset.Legend>
@@ -126,7 +126,7 @@ export const EmailVerification: React.FC = () => {
                   <Fieldset.Actions className="flex flex-col gap-4 mt-6">
                     <Button
                       type="submit"
-                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl transition-all flex items-center justify-center gap-2 text-white-force"
+                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white-force rounded-2xl transition-all flex items-center justify-center gap-2"
                       isDisabled={loading || code.some(d => d === '')}
                     >
                       {loading && <Spinner size="sm" />}

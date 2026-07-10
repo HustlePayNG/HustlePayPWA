@@ -17,9 +17,9 @@ export const IntroOnboarding: React.FC = () => {
       badgeColor: "bg-brand-500/10 text-brand-600 border-brand-500/30",
       visual: (
         <div className="relative h-48 w-full flex items-center justify-center p-2">
-          <img 
-            src="/assets/images/undraw_searching-everywhere_tffi.svg" 
-            className="h-44 w-full object-contain relative z-10" 
+          <img
+            src="/assets/images/undraw_searching-everywhere_tffi.svg"
+            className="h-44 w-full object-contain relative z-10"
             alt="Search experts"
           />
         </div>
@@ -33,9 +33,9 @@ export const IntroOnboarding: React.FC = () => {
       badgeColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
       visual: (
         <div className="relative h-48 w-full flex items-center justify-center p-2">
-          <img 
-            src="/assets/images/undraw_money-received_eg1c.svg" 
-            className="h-44 w-full object-contain relative z-10" 
+          <img
+            src="/assets/images/undraw_money-received_eg1c.svg"
+            className="h-44 w-full object-contain relative z-10"
             alt="Secure payments"
           />
         </div>
@@ -49,9 +49,9 @@ export const IntroOnboarding: React.FC = () => {
       badgeColor: "bg-amber-500/10 text-amber-600 border-amber-500/30",
       visual: (
         <div className="relative h-48 w-full flex items-center justify-center p-2">
-          <img 
-            src="/assets/images/undraw_chat-bot_c8iw.svg" 
-            className="h-44 w-full object-contain relative z-10" 
+          <img
+            src="/assets/images/undraw_chat-bot_c8iw.svg"
+            className="h-44 w-full object-contain relative z-10"
             alt="Secure chat support"
           />
         </div>
@@ -82,10 +82,10 @@ export const IntroOnboarding: React.FC = () => {
     <div className="flex-1 flex flex-col justify-between px-6 py-10 bg-zinc-955 min-h-screen text-center animate-in fade-in duration-300">
       {/* Top Header */}
       <div className="flex justify-start items-center w-full">
-        <img 
-          src="/logo.png" 
-          className="h-8 w-auto object-contain" 
-          alt="HustlePay Logo" 
+        <img
+          src="/real logo.svg"
+          className="h-5 w-auto object-contain"
+          alt="HustlePay Logo"
         />
       </div>
 
@@ -147,7 +147,7 @@ export const IntroOnboarding: React.FC = () => {
           )}
           <Button
             onClick={handleNext}
-            className="flex-1 font-bold h-12 bg-brand-500 hover:bg-brand-600 rounded-2xl shadow-xl shadow-brand-500/10 text-white transition-all text-white-force"
+            className="flex-1 font-bold h-12 bg-brand-500 hover:bg-brand-600 rounded-2xl shadow-xl shadow-brand-500/10 text-white-force transition-all"
           >
             {slide === slides.length - 1 ? "Get Started" : "Continue"}
           </Button>
