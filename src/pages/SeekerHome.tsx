@@ -89,7 +89,7 @@ export const SeekerHome: React.FC = () => {
         <p className="text-[11px] text-brand-400 uppercase tracking-widest font-bold mb-0.5">
           {getGreeting()}, {firstName} 👋
         </p>
-        <h1 className="text-2xl font-extrabold text-white leading-tight">{subtitle}</h1>
+        <h1 className="text-2xl font-medium text-white leading-tight">{subtitle}</h1>
       </div>
 
       {/* ── Search + Filter ──────────────────────────────────────── */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb } from '../services/mockDb';
@@ -6,7 +6,6 @@ import {
   Home, SearchNormal1, MessageText, NotificationBing, CloseCircle
 } from 'iconsax-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { liquidGlass } from './liquidGlass';
 
 // Standard layout
 
@@ -28,8 +27,8 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, icon, label })
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
         className={`flex items-center gap-1.5 h-full rounded-full transition-colors duration-300 ${
           isActive
-            ? 'bg-brand-500 text-white px-5 font-bold text-white-force'
-            : 'text-zinc-500 hover:text-zinc-300 px-4'
+            ? 'bg-brand-500 text-white px-3.5 font-bold text-white-force'
+            : 'text-zinc-500 hover:text-zinc-300 px-2.5'
         }`}
       >
         {icon}
@@ -62,7 +61,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const isArtisanPending = activeMode === 'artisan' && user?.kycStatus !== 'approved';
   
   const [showNotifications, setShowNotifications] = useState(false);
-  const navRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     refreshNotifications();
@@ -71,26 +69,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }, 8000); // Polling simulation
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const instances: any[] = [];
-
-    if (navRef.current) {
-      instances.push(liquidGlass(navRef.current, {
-        scale: -112,
-        chroma: 6,
-        border: 0.07,
-        mapBlur: 12,
-        blur: 3,
-        saturate: 1.5,
-        fallbackBlur: 16
-      }));
-    }
-
-    return () => {
-      instances.forEach(ins => ins.destroy());
-    };
-  }, [user, isArtisanPending, location.pathname]);
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -160,15 +138,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col pt-10 pb-20 overflow-x-hidden">
+      <main className="flex-1 flex flex-col pt-10 pb-20 overflow-x-hidden animate-page-fade">
         {children}
       </main>
 
       {!isArtisanPending && (
-        <div
-          ref={navRef}
-          role="navigation"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit liquid-glass-nav h-11 rounded-full p-0 flex flex-row flex-nowrap items-center justify-center gap-0 overflow-hidden"
+        <nav
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit glass h-11 rounded-full p-1 flex flex-row items-center justify-center gap-0.5 shadow-2xl"
         >
           <TabButton
             isActive={currentTab === 'home'}
@@ -202,7 +178,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             }
             label="Me"
           />
-        </div>
+        </nav>
       )}
     </div>
   );
