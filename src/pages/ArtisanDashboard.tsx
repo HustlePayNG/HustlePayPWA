@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb, type Booking, type ArtisanProfile } from '../services/mockDb';
 import { Calendar, Star, Money, ArrowRight, TrendUp, Award } from 'iconsax-react';
-import { Button } from '@heroui/react';
+import { 
+  Button, Modal, ModalBackdrop, ModalContainer, ModalDialog, 
+  ModalBody, ModalHeader, ModalFooter, TextField, Label, 
+  Spinner, toast 
+} from '@heroui/react';
 
 export const ArtisanDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +15,52 @@ export const ArtisanDashboard: React.FC = () => {
   const [profile, setProfile] = useState<ArtisanProfile | undefined>(undefined);
   const [nextBooking, setNextBooking] = useState<Booking | null>(null);
   const [countdown, setCountdown] = useState('');
+
+  // Bidding State
+  const [openJobs, setOpenJobs] = useState<any[]>([]);
+  const [showBidModal, setShowBidModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [bidPrice, setBidPrice] = useState('');
+  const [bidNote, setBidNote] = useState('');
+  const [submittingBid, setSubmittingBid] = useState(false);
+
+  const fetchOpenJobs = () => {
+    const list = mockDb.getJobOpenings();
+    setOpenJobs(list.filter(j => j.status === 'open'));
+  };
+
+  useEffect(() => {
+    fetchOpenJobs();
+  }, []);
+
+  const handlePlaceBid = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedJob) return;
+
+    const priceNum = parseFloat(bidPrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      toast.warning('Please enter a valid bid amount.');
+      return;
+    }
+
+    setSubmittingBid(true);
+    setTimeout(() => {
+      const ok = mockDb.submitJobProposal(selectedJob.id, user.id, priceNum, bidNote);
+      if (ok) {
+        toast.success('Bid submitted successfully!', {
+          description: 'The client has been notified of your proposal.'
+        });
+        setBidNote('');
+        setBidPrice('');
+        setShowBidModal(false);
+        fetchOpenJobs();
+      } else {
+        toast.warning('You have already submitted a bid for this job.');
+        setShowBidModal(false);
+      }
+      setSubmittingBid(false);
+    }, 1000);
+  };
 
   useEffect(() => {
     refreshWallet();
@@ -137,6 +187,63 @@ export const ArtisanDashboard: React.FC = () => {
         )}
       </div>
 
+      {/* Available Job Openings near you */}
+      <div className="mb-6">
+        <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-wider mb-3">Available Job Openings</h3>
+        {openJobs.length === 0 ? (
+          <div className="glass border border-zinc-900 rounded-3xl p-6 text-center text-zinc-500 text-xs">
+            No open jobs in your area currently. Check back later!
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {openJobs.map(job => {
+              const alreadyBidded = job.proposals.some((p: any) => p.artisanId === user.id);
+              return (
+                <div 
+                  key={job.id} 
+                  className="glass border border-zinc-855 rounded-[28px] p-4 flex flex-col gap-3.5"
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="text-left">
+                      <span className="text-[9px] bg-brand-500/10 text-brand-300 border border-brand-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{job.category}</span>
+                      <h4 className="font-extrabold text-sm text-white mt-1.5 leading-snug">{job.title}</h4>
+                      <span className="text-[10px] text-zinc-450 block mt-0.5">Posted by: {job.seekerName}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[8px] uppercase tracking-wider text-zinc-500 font-bold block mb-0.5">Budget</span>
+                      <span className="text-sm font-black text-white">₦{job.budget.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-400 font-light leading-relaxed text-left">{job.description}</p>
+                  
+                  <div className="h-px bg-zinc-855/60"></div>
+                  
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-[10px] text-zinc-500 font-semibold">{job.address}</span>
+                    <Button
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setBidPrice(String(job.budget));
+                        setShowBidModal(true);
+                      }}
+                      isDisabled={alreadyBidded}
+                      size="sm"
+                      className={`h-8 px-4 rounded-xl text-[10px] font-bold border-0 transition-all ${
+                        alreadyBidded 
+                          ? 'bg-zinc-800 text-zinc-500' 
+                          : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/10'
+                      }`}
+                    >
+                      {alreadyBidded ? 'Bid Submitted' : 'Place Bid'}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Job Stats & Analytics Summary */}
       <div>
         <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-wider mb-3">Performance Overview</h3>
@@ -163,6 +270,73 @@ export const ArtisanDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Bid Modal */}
+      <Modal isOpen={showBidModal} onOpenChange={setShowBidModal}>
+        <ModalBackdrop className="bg-black/60 backdrop-blur-sm" />
+        <ModalContainer className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <ModalDialog className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200">
+            {selectedJob && (
+              <form onSubmit={handlePlaceBid}>
+                <ModalHeader className="px-6 pt-6 pb-2 border-b border-zinc-800/80">
+                  <h3 className="text-base font-extrabold text-white">Place a Bid</h3>
+                </ModalHeader>
+                <ModalBody className="px-6 py-4 flex flex-col gap-4 text-left">
+                  <div className="bg-zinc-950 border border-zinc-800/80 rounded-2xl p-3.5 text-left mb-1">
+                    <span className="text-[9px] bg-brand-500/10 text-brand-300 border border-brand-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{selectedJob.category}</span>
+                    <h4 className="text-xs font-bold text-white mt-1.5">{selectedJob.title}</h4>
+                    <p className="text-[10px] text-zinc-500 mt-1">Client's Budget: ₦{selectedJob.budget.toLocaleString()}</p>
+                  </div>
+
+                  <TextField className="flex flex-col gap-1.5">
+                    <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Your Bid Price (₦)</Label>
+                    <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                      <input
+                        type="number"
+                        placeholder="e.g. 12000"
+                        required
+                        value={bidPrice}
+                        onChange={e => setBidPrice(e.target.value)}
+                        className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
+                      />
+                    </div>
+                  </TextField>
+
+                  <TextField className="flex flex-col gap-1.5">
+                    <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Proposal Details / Cover Note</Label>
+                    <div className="p-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-start transition-colors">
+                      <textarea
+                        placeholder="Explain why you are the best fit for this job..."
+                        required
+                        rows={3}
+                        value={bidNote}
+                        onChange={e => setBidNote(e.target.value)}
+                        className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600 resize-none min-h-[75px]"
+                      />
+                    </div>
+                  </TextField>
+                </ModalBody>
+                <ModalFooter className="px-6 pb-6 pt-2 flex gap-3">
+                  <Button
+                    onClick={() => setShowBidModal(false)}
+                    variant="outline"
+                    className="flex-1 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 font-bold h-11 rounded-2xl text-xs transition-colors"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    isDisabled={submittingBid}
+                    className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold h-11 rounded-2xl text-xs shadow-xl shadow-brand-500/10 border-0 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    {submittingBid ? <Spinner size="sm" color="current" /> : 'Submit Bid'}
+                  </Button>
+                </ModalFooter>
+              </form>
+            )}
+          </ModalDialog>
+        </ModalContainer>
+      </Modal>
     </div>
   );
 };

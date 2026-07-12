@@ -6,6 +6,11 @@ import {
   SearchNormal1, Setting4, Star, Location, CloseCircle,
   Heart, MessageText
 } from 'iconsax-react';
+import { 
+  Modal, ModalBackdrop, ModalContainer, ModalDialog, 
+  ModalBody, ModalHeader, ModalFooter, Button, TextField, 
+  Label, toast, Spinner 
+} from '@heroui/react';
 import { Requests } from './Requests';
 
 // ── Greeting helpers ──────────────────────────────────────────────
@@ -44,6 +49,90 @@ export const SeekerHome: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const isInteractedRef = useRef(false);
+
+  // Job Openings State
+  const [openings, setOpenings] = useState<any[]>([]);
+  const [showCreateJobModal, setShowCreateJobModal] = useState(false);
+  const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
+
+  // Form Fields
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobCategory, setJobCategory] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  const [jobBudget, setJobBudget] = useState('');
+  const [jobAddress, setJobAddress] = useState(user?.address?.formattedAddress || '');
+  const [postingJob, setPostingJob] = useState(false);
+
+  // Categories list
+  const categories = mockDb.getServiceCategories();
+
+  const fetchOpenings = () => {
+    if (user) {
+      setOpenings(mockDb.getJobOpenings(user.id));
+    }
+  };
+
+  useEffect(() => {
+    fetchOpenings();
+  }, [user]);
+
+  const handleCreateJob = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!jobTitle || !jobCategory || !jobDescription || !jobBudget || !jobAddress) {
+      toast.warning('Please fill in all details.');
+      return;
+    }
+
+    const budgetNum = parseFloat(jobBudget);
+    if (isNaN(budgetNum) || budgetNum <= 0) {
+      toast.warning('Please enter a valid budget amount.');
+      return;
+    }
+
+    setPostingJob(true);
+    setTimeout(() => {
+      mockDb.createJobOpening(
+        user.id,
+        user.fullName,
+        jobTitle,
+        jobCategory,
+        jobDescription,
+        budgetNum,
+        jobAddress
+      );
+      toast.success('Job opening posted successfully!', {
+        description: 'Artisans will notify you with proposals soon.'
+      });
+      setPostingJob(false);
+      setShowCreateJobModal(false);
+      
+      // Reset form fields
+      setJobTitle('');
+      setJobCategory('');
+      setJobDescription('');
+      setJobBudget('');
+      
+      fetchOpenings();
+    }, 1000);
+  };
+
+  const handleAcceptBid = (proposalId: string) => {
+    if (!selectedJob) return;
+    const booking = mockDb.acceptJobProposal(selectedJob.id, proposalId);
+    if (booking) {
+      toast.success('Bid accepted!', {
+        description: `Booking reference: ${booking.reference}`
+      });
+      setShowJobDetailsModal(false);
+      setSelectedJob(null);
+      fetchOpenings();
+      navigate('/history');
+    } else {
+      toast.warning('Could not accept proposal. Please try again.');
+    }
+  };
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -185,6 +274,67 @@ export const SeekerHome: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ── Job Openings Trigger & List ── */}
+      <div className="px-5 mb-6">
+        <div className="bg-brand-500/10 border border-brand-500/20 rounded-[22px] p-4 flex justify-between items-center">
+          <div className="flex-1 pr-3">
+            <h3 className="text-sm font-bold text-white mb-0.5">Need an Artisan?</h3>
+            <p className="text-[11px] text-zinc-400 font-light leading-relaxed">
+              Post an open job request and get custom bids from local vetted professionals.
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              setJobAddress(user?.address?.formattedAddress || '');
+              setShowCreateJobModal(true);
+            }}
+            size="sm"
+            className="bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/15 border-0"
+          >
+            Post Job
+          </Button>
+        </div>
+      </div>
+
+      {/* Active Openings list */}
+      {openings.length > 0 && (
+        <div className="px-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-bold text-white">Your Posted Openings</span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {openings.map(job => (
+              <div 
+                key={job.id} 
+                onClick={() => {
+                  setSelectedJob(job);
+                  setShowJobDetailsModal(true);
+                }}
+                className="bg-zinc-900/40 border border-zinc-800/80 rounded-[22px] p-4 cursor-pointer hover:border-zinc-700 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <span className="text-[9px] bg-brand-500/10 text-brand-300 border border-brand-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{job.category}</span>
+                    <h4 className="text-sm font-bold text-white mt-2 leading-tight">{job.title}</h4>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    job.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'
+                  }`}>
+                    {job.status === 'open' ? `${job.proposals.length} Bids` : 'Assigned'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed font-light mb-3">{job.description}</p>
+                <div className="flex justify-between items-center text-[10px] text-zinc-500 font-semibold border-t border-zinc-800/40 pt-2.5">
+                  <span>Budget: ₦{job.budget.toLocaleString()}</span>
+                  <span>{new Date(job.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
 
       {/* ── Recommended For You ──────────────────────────────────── */}
@@ -388,6 +538,209 @@ export const SeekerHome: React.FC = () => {
       <div className="px-5 flex-1 flex flex-col">
         <Requests />
       </div>
+
+      {/* Create Opening Modal */}
+      <Modal isOpen={showCreateJobModal} onOpenChange={setShowCreateJobModal}>
+        <ModalBackdrop className="bg-black/60 backdrop-blur-sm" />
+        <ModalContainer className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <ModalDialog className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200">
+            <form onSubmit={handleCreateJob}>
+              <ModalHeader className="px-6 pt-6 pb-2 border-b border-zinc-800/80">
+                <h3 className="text-base font-extrabold text-white">Post a Job Opening</h3>
+              </ModalHeader>
+              <ModalBody className="px-6 py-4 flex flex-col gap-4 text-left">
+                <TextField className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Job Title</Label>
+                  <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                    <input
+                      type="text"
+                      placeholder="e.g. Fit kitchen sink pipes"
+                      required
+                      value={jobTitle}
+                      onChange={e => setJobTitle(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
+                    />
+                  </div>
+                </TextField>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Category</Label>
+                  <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                    <select
+                      required
+                      value={jobCategory}
+                      onChange={e => setJobCategory(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-white focus:outline-none"
+                      style={{ colorScheme: 'dark' }}
+                    >
+                      <option value="" disabled className="bg-zinc-900">Select category</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.id} className="bg-zinc-900">{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <TextField className="flex flex-col gap-1.5">
+                    <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Budget (₦)</Label>
+                    <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                      <input
+                        type="number"
+                        placeholder="e.g. 15000"
+                        required
+                        value={jobBudget}
+                        onChange={e => setJobBudget(e.target.value)}
+                        className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
+                      />
+                    </div>
+                  </TextField>
+
+                  <TextField className="flex flex-col gap-1.5">
+                    <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Location Address</Label>
+                    <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                      <input
+                        type="text"
+                        placeholder="e.g. Yaba, Lagos"
+                        required
+                        value={jobAddress}
+                        onChange={e => setJobAddress(e.target.value)}
+                        className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
+                      />
+                    </div>
+                  </TextField>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Job Description</Label>
+                  <div className="p-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-start transition-colors">
+                    <textarea
+                      placeholder="Describe what needs to be done..."
+                      required
+                      rows={3}
+                      value={jobDescription}
+                      onChange={e => setJobDescription(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600 resize-none min-h-[70px]"
+                    />
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter className="px-6 pb-6 pt-2 flex gap-3">
+                <Button
+                  onClick={() => setShowCreateJobModal(false)}
+                  variant="outline"
+                  className="flex-1 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 font-bold h-11 rounded-2xl text-xs transition-colors"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  isDisabled={postingJob}
+                  className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold h-11 rounded-2xl text-xs shadow-xl shadow-brand-500/10 border-0 transition-all flex items-center justify-center gap-1.5"
+                >
+                  {postingJob ? <Spinner size="sm" color="current" /> : 'Post Opening'}
+                </Button>
+              </ModalFooter>
+            </form>
+          </ModalDialog>
+        </ModalContainer>
+      </Modal>
+
+      {/* Job Details & Bids Modal */}
+      <Modal isOpen={showJobDetailsModal} onOpenChange={setShowJobDetailsModal}>
+        <ModalBackdrop className="bg-black/60 backdrop-blur-sm" />
+        <ModalContainer className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <ModalDialog className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200">
+            {selectedJob && (
+              <div className="flex flex-col max-h-[85vh]">
+                <ModalHeader className="px-6 pt-6 pb-2 border-b border-zinc-800/80 flex justify-between items-center text-left">
+                  <div>
+                    <span className="text-[9px] bg-brand-500/20 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{selectedJob.category}</span>
+                    <h3 className="text-base font-extrabold text-white mt-2.5 leading-snug">{selectedJob.title}</h3>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                    selectedJob.status === 'open' ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/30' : 'bg-zinc-800 text-zinc-500'
+                  }`}>
+                    {selectedJob.status === 'open' ? 'Open' : 'Assigned'}
+                  </span>
+                </ModalHeader>
+                <ModalBody className="px-6 py-4 flex flex-col gap-4 overflow-y-auto no-scrollbar text-left">
+                  {/* Job Details Card */}
+                  <div className="bg-zinc-950 border border-zinc-800/80 rounded-2xl p-4 text-left">
+                    <p className="text-[11px] text-zinc-300 leading-relaxed font-light mb-3">{selectedJob.description}</p>
+                    <div className="grid grid-cols-2 gap-3 text-[10px] text-zinc-500 font-semibold border-t border-zinc-800/40 pt-3">
+                      <div>
+                        <span className="block text-[8px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Budget</span>
+                        <span className="text-zinc-200 font-bold">₦{selectedJob.budget.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[8px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Location</span>
+                        <span className="text-zinc-200 font-bold truncate block">{selectedJob.address}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bids List Header */}
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-2.5 flex items-center gap-1.5">
+                      <span>Proposals Received</span>
+                      <span className="h-5 px-1.5 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-full flex items-center justify-center font-extrabold">{selectedJob.proposals.length}</span>
+                    </h4>
+                    
+                    {selectedJob.proposals.length === 0 ? (
+                      <div className="text-center py-8 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-2xl">
+                        <p className="text-xs text-zinc-550 font-light">No bids received yet.</p>
+                        <p className="text-[10px] text-zinc-650 font-light mt-0.5">Local artisans are being notified.</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {selectedJob.proposals.map((prop: any) => (
+                          <div key={prop.id} className="border border-zinc-800/80 rounded-2xl p-4 bg-zinc-950 flex flex-col gap-3 shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <img src={prop.artisanAvatar} className="h-9 w-9 rounded-full object-cover ring-1 ring-brand-500/20" alt="" />
+                              <div className="flex-1 min-w-0 text-left">
+                                <h5 className="text-xs font-bold text-white truncate">{prop.artisanName}</h5>
+                                <p className="text-[9px] text-zinc-500 font-semibold">{new Date(prop.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-0.5">Bid Price</span>
+                                <span className="text-xs font-black text-brand-400">₦{prop.price.toLocaleString()}</span>
+                              </div>
+                            </div>
+                            {prop.note && (
+                              <p className="text-[11px] text-zinc-400 italic bg-zinc-900 border border-zinc-850 p-2.5 rounded-xl text-left leading-relaxed font-light">
+                                "{prop.note}"
+                              </p>
+                            )}
+                            {selectedJob.status === 'open' && (
+                              <Button
+                                onClick={() => handleAcceptBid(prop.id)}
+                                size="sm"
+                                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold h-9 rounded-xl text-[10px] border-0 transition-all flex items-center justify-center gap-1 shadow-md shadow-brand-500/10"
+                              >
+                                Accept Bid & Hire
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </ModalBody>
+                <ModalFooter className="px-6 pb-6 pt-2 border-t border-zinc-800/80">
+                  <Button
+                    onClick={() => setShowJobDetailsModal(false)}
+                    variant="outline"
+                    className="w-full border border-zinc-800 hover:bg-zinc-800 text-zinc-400 font-bold h-11 rounded-2xl text-xs transition-colors"
+                  >
+                    Close
+                  </Button>
+                </ModalFooter>
+              </div>
+            )}
+          </ModalDialog>
+        </ModalContainer>
+      </Modal>
     </div>
   );
 };

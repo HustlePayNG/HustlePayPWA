@@ -1,16 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { 
   Setting, Card, Danger, InfoCircle, 
   Refresh, ArrowRight2, Logout
 } from 'iconsax-react';
+import { Spinner, toast } from '@heroui/react';
 
 export const More: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeMode, switchMode, logout } = useAppStore();
+  const [checking, setChecking] = useState(false);
 
   if (!user) return null;
+
+  const handleCheckForUpdates = () => {
+    setChecking(true);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          // Force service worker update check
+          return registration.update();
+        })
+        .then((registration) => {
+          setChecking(false);
+          if (registration?.waiting || registration?.installing) {
+            toast.info('Update found! Downloading and updating...');
+          } else {
+            toast.success('HustlePay is up to date!', {
+              description: 'You are using the latest version.'
+            });
+          }
+        })
+        .catch((err) => {
+          setChecking(false);
+          console.error('Update check failed:', err);
+          toast.warning('Could not check for updates. Try again later.');
+        });
+    } else {
+      setTimeout(() => {
+        setChecking(false);
+        toast.success('HustlePay is up to date!', {
+          description: 'You are using the latest version.'
+        });
+      }, 800);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -89,6 +124,22 @@ export const More: React.FC = () => {
             <span className="text-zinc-200 text-sm font-semibold">Help & Support</span>
           </div>
           <ArrowRight2 size={16} color="currentColor" variant="Broken" className="text-zinc-500" />
+        </button>
+
+        <button 
+          onClick={handleCheckForUpdates} 
+          disabled={checking}
+          className="flex items-center justify-between w-full px-3 py-3.5 rounded-xl hover:bg-zinc-800/40 transition-colors text-left disabled:opacity-80"
+        >
+          <div className="flex items-center gap-3">
+            <Refresh size={20} color="currentColor" variant="Broken" className={`text-brand-400 ${checking ? 'animate-spin' : ''}`} />
+            <span className="text-zinc-200 text-sm font-semibold">Check for Updates</span>
+          </div>
+          {checking ? (
+            <Spinner size="sm" color="current" className="text-brand-500 mr-1" />
+          ) : (
+            <span className="text-[10px] text-brand-600 bg-brand-50/80 border border-brand-100/50 px-2.5 py-0.5 rounded-full mr-1 font-bold">v1.3.0</span>
+          )}
         </button>
       </div>
 

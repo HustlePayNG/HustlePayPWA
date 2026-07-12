@@ -146,6 +146,33 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface JobProposal {
+  id: string;
+  artisanId: string;
+  artisanName: string;
+  artisanAvatar: string;
+  price: number;
+  note: string;
+  createdAt: string;
+}
+
+export interface JobOpening {
+  id: string;
+  seekerId: string;
+  seekerName: string;
+  title: string;
+  category: string;
+  categoryId: string;
+  description: string;
+  budget: number;
+  address: string;
+  status: 'open' | 'assigned' | 'completed';
+  artisanId?: string;
+  createdAt: string;
+  proposals: JobProposal[];
+}
+
+
 // Initial static seed categories
 const CATEGORIES: ServiceCategory[] = [
   { id: 'cat-1', key: 'plumbing', name: 'Plumbing', iconKey: 'Wrench' },
@@ -864,5 +891,133 @@ export const mockDb = {
     const list = getStorageItem<Notification[]>('hp_notifications');
     const updated = list.map(n => n.userId === userId ? { ...n, read: true } : n);
     setStorageItem('hp_notifications', updated);
+  },
+
+  // --- Job Openings ---
+  createJobOpening: (seekerId: string, seekerName: string, title: string, categoryId: string, description: string, budget: number, address: string): JobOpening => {
+    const list = getStorageItem<JobOpening[]>('hp_openings');
+    const categories = getStorageItem<ServiceCategory[]>('hp_categories');
+    const cat = categories.find(c => c.id === categoryId);
+    
+    const newOpening: JobOpening = {
+      id: `job-${Math.random().toString(36).substr(2, 9)}`,
+      seekerId,
+      seekerName,
+      title,
+      category: cat ? cat.name : 'General',
+      categoryId,
+      description,
+      budget,
+      address,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      proposals: []
+    };
+    
+    list.push(newOpening);
+    setStorageItem('hp_openings', list);
+    return newOpening;
+  },
+
+  getJobOpenings: (seekerId?: string): JobOpening[] => {
+    const list = getStorageItem<JobOpening[]>('hp_openings');
+    if (seekerId) {
+      return list.filter(o => o.seekerId === seekerId);
+    }
+    return list;
+  },
+
+  getJobOpeningById: (id: string): JobOpening | undefined => {
+    const list = getStorageItem<JobOpening[]>('hp_openings');
+    return list.find(o => o.id === id);
+  },
+
+  submitJobProposal: (jobId: string, artisanId: string, price: number, note: string): boolean => {
+    const list = getStorageItem<JobOpening[]>('hp_openings');
+    const artisans = getStorageItem<ArtisanProfile[]>('hp_artisans');
+    const artisan = artisans.find(a => a.id === artisanId);
+    if (!artisan) return false;
+
+    const idx = list.findIndex(o => o.id === jobId);
+    if (idx === -1) return false;
+
+    const job = list[idx];
+    if (job.status !== 'open') return false;
+
+    // Check if artisan already has a proposal
+    const exists = job.proposals.some(p => p.artisanId === artisanId);
+    if (exists) return false;
+
+    const newProposal: JobProposal = {
+      id: `prop-${Math.random().toString(36).substr(2, 9)}`,
+      artisanId,
+      artisanName: artisan.businessName,
+      artisanAvatar: artisan.avatarUrl,
+      price,
+      note,
+      createdAt: new Date().toISOString()
+    };
+
+    job.proposals.push(newProposal);
+    list[idx] = job;
+    setStorageItem('hp_openings', list);
+
+    // Notify seeker that they got a new bid
+    mockDb.createNotification(job.seekerId, 'New Bid Received', `Artisan ${artisan.businessName} submitted a bid of ₦${price.toLocaleString()} for "${job.title}".`);
+
+    return true;
+  },
+
+  acceptJobProposal: (jobId: string, proposalId: string): Booking | null => {
+    const openings = getStorageItem<JobOpening[]>('hp_openings');
+    const bookings = getStorageItem<Booking[]>('hp_bookings');
+    const users = getStorageItem<User[]>('hp_users');
+
+    const jobIdx = openings.findIndex(o => o.id === jobId);
+    if (jobIdx === -1) return null;
+    const job = openings[jobIdx];
+
+    const prop = job.proposals.find(p => p.id === proposalId);
+    if (!prop) return null;
+
+    const seeker = users.find(u => u.id === job.seekerId);
+
+    // Update job opening status
+    openings[jobIdx] = {
+      ...job,
+      status: 'assigned',
+      artisanId: prop.artisanId
+    };
+    setStorageItem('hp_openings', openings);
+
+    // Create booking
+    const newBooking: Booking = {
+      id: `book-${Math.random().toString(36).substr(2, 9)}`,
+      reference: `HP-${Math.floor(100000 + Math.random() * 900000)}`,
+      seekerId: job.seekerId,
+      artisanId: prop.artisanId,
+      artisanName: prop.artisanName,
+      artisanAvatar: prop.artisanAvatar,
+      seekerName: seeker?.fullName || job.seekerName,
+      seekerPhone: seeker?.phone || '',
+      status: 'accepted',
+      serviceName: job.title,
+      description: job.description,
+      photos: [],
+      scheduledStartAt: new Date(Date.now() + 24*60*60*1000).toISOString(),
+      address: job.address,
+      calloutFee: 0,
+      estimatedAmount: prop.price,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    bookings.push(newBooking);
+    setStorageItem('hp_bookings', bookings);
+
+    // Notify artisan that their bid was accepted
+    mockDb.createNotification(prop.artisanId, 'Bid Accepted!', `Your bid of ₦${prop.price.toLocaleString()} for "${job.title}" has been accepted.`);
+
+    return newBooking;
   }
 };
