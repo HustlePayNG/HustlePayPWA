@@ -7,7 +7,7 @@ const DesktopBlocker: React.FC = () => {
         {/* SVG Illustration */}
         <div className="w-80 max-w-full mb-8 opacity-90">
           <img
-            src="/assets/images/undraw_searching-everywhere_tffi.svg"
+            src="/assets/images/undraw_files-missing_ntwe.svg"
             alt="Mobile Only Platform"
             className="w-full h-auto"
           />
