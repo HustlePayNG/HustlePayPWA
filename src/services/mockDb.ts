@@ -170,6 +170,7 @@ export interface JobOpening {
   artisanId?: string;
   createdAt: string;
   proposals: JobProposal[];
+  imageUrl?: string;
 }
 
 
@@ -894,7 +895,7 @@ export const mockDb = {
   },
 
   // --- Job Openings ---
-  createJobOpening: (seekerId: string, seekerName: string, title: string, categoryId: string, description: string, budget: number, address: string): JobOpening => {
+  createJobOpening: (seekerId: string, seekerName: string, title: string, categoryId: string, description: string, budget: number, address: string, imageUrl?: string): JobOpening => {
     const list = getStorageItem<JobOpening[]>('hp_openings');
     const categories = getStorageItem<ServiceCategory[]>('hp_categories');
     const cat = categories.find(c => c.id === categoryId);
@@ -911,7 +912,8 @@ export const mockDb = {
       address,
       status: 'open',
       createdAt: new Date().toISOString(),
-      proposals: []
+      proposals: [],
+      imageUrl
     };
     
     list.push(newOpening);
@@ -930,6 +932,24 @@ export const mockDb = {
   getJobOpeningById: (id: string): JobOpening | undefined => {
     const list = getStorageItem<JobOpening[]>('hp_openings');
     return list.find(o => o.id === id);
+  },
+
+  updateJobOpening: (id: string, updates: Partial<JobOpening>): boolean => {
+    const list = getStorageItem<JobOpening[]>('hp_openings');
+    const idx = list.findIndex(o => o.id === id);
+    if (idx === -1) return false;
+    
+    if (updates.categoryId) {
+      const categories = getStorageItem<ServiceCategory[]>('hp_categories');
+      const cat = categories.find(c => c.id === updates.categoryId);
+      if (cat) {
+        updates.category = cat.name;
+      }
+    }
+
+    list[idx] = { ...list[idx], ...updates };
+    setStorageItem('hp_openings', list);
+    return true;
   },
 
   submitJobProposal: (jobId: string, artisanId: string, price: number, note: string): boolean => {

@@ -9,7 +9,8 @@ import {
 import { 
   Modal, ModalBackdrop, ModalContainer, ModalDialog, 
   ModalBody, ModalHeader, ModalFooter, Button, TextField, 
-  Label, toast, Spinner 
+  Label, toast, Spinner,
+  Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem
 } from '@heroui/react';
 import { Requests } from './Requests';
 
@@ -63,9 +64,78 @@ export const SeekerHome: React.FC = () => {
   const [jobBudget, setJobBudget] = useState('');
   const [jobAddress, setJobAddress] = useState(user?.address?.formattedAddress || '');
   const [postingJob, setPostingJob] = useState(false);
+  const [jobImage, setJobImage] = useState('');
+
+  // Editing Fields
+  const [isEditingJob, setIsEditingJob] = useState(false);
+  const [editJobTitle, setEditJobTitle] = useState('');
+  const [editJobCategory, setEditJobCategory] = useState('');
+  const [editJobDescription, setEditJobDescription] = useState('');
+  const [editJobBudget, setEditJobBudget] = useState('');
+  const [editJobAddress, setEditJobAddress] = useState('');
+  const [editJobImage, setEditJobImage] = useState('');
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.warning('Image must be under 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (isEdit) {
+        setEditJobImage(reader.result as string);
+      } else {
+        setJobImage(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Categories list
   const categories = mockDb.getServiceCategories();
+
+  const startEditingJob = () => {
+    if (!selectedJob) return;
+    setEditJobTitle(selectedJob.title);
+    setEditJobCategory(selectedJob.categoryId);
+    setEditJobDescription(selectedJob.description);
+    setEditJobBudget(String(selectedJob.budget));
+    setEditJobAddress(selectedJob.address);
+    setEditJobImage(selectedJob.imageUrl || '');
+    setIsEditingJob(true);
+  };
+
+  const handleSaveChanges = () => {
+    if (!selectedJob || !user) return;
+    const budgetNum = parseFloat(editJobBudget);
+    if (isNaN(budgetNum) || budgetNum <= 0) {
+      toast.warning('Please enter a valid budget.');
+      return;
+    }
+
+    const success = mockDb.updateJobOpening(selectedJob.id, {
+      title: editJobTitle,
+      categoryId: editJobCategory,
+      budget: budgetNum,
+      address: editJobAddress,
+      description: editJobDescription,
+      imageUrl: editJobImage || undefined
+    });
+
+    if (success) {
+      toast.success('Job details updated successfully!');
+      fetchOpenings();
+      setSelectedJob(mockDb.getJobOpeningById(selectedJob.id) || null);
+      setIsEditingJob(false);
+    } else {
+      toast.warning('Failed to update job details.');
+    }
+  };
 
   const fetchOpenings = () => {
     if (user) {
@@ -100,7 +170,8 @@ export const SeekerHome: React.FC = () => {
         jobCategory,
         jobDescription,
         budgetNum,
-        jobAddress
+        jobAddress,
+        jobImage || undefined
       );
       toast.success('Job opening posted successfully!', {
         description: 'Artisans will notify you with proposals soon.'
@@ -113,6 +184,7 @@ export const SeekerHome: React.FC = () => {
       setJobCategory('');
       setJobDescription('');
       setJobBudget('');
+      setJobImage('');
       
       fetchOpenings();
     }, 1000);
@@ -309,25 +381,32 @@ export const SeekerHome: React.FC = () => {
                 key={job.id} 
                 onClick={() => {
                   setSelectedJob(job);
+                  setIsDescExpanded(false);
                   setShowJobDetailsModal(true);
                 }}
-                className="bg-zinc-900/40 border border-zinc-800/80 rounded-[22px] p-4 cursor-pointer hover:border-zinc-700 transition-colors"
+                className="bg-white border border-zinc-150 rounded-[24px] p-4 cursor-pointer hover:border-brand-500/30 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-3"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="text-[9px] bg-brand-500/10 text-brand-300 border border-brand-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{job.category}</span>
-                    <h4 className="text-sm font-bold text-white mt-2 leading-tight">{job.title}</h4>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    job.status === 'open' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'
-                  }`}>
-                    {job.status === 'open' ? `${job.proposals.length} Bids` : 'Assigned'}
-                  </span>
+                <div className="flex justify-between items-start">
+                  <h4 className="text-sm font-extrabold text-zinc-900 leading-tight text-left">
+                    {job.title}
+                  </h4>
+                  <span className={`h-2.5 w-2.5 rounded-full mt-1 shrink-0 ${
+                    job.status === 'open' ? 'bg-emerald-500' : job.status === 'assigned' ? 'bg-blue-500' : 'bg-zinc-400'
+                  }`} />
                 </div>
-                <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed font-light mb-3">{job.description}</p>
-                <div className="flex justify-between items-center text-[10px] text-zinc-500 font-semibold border-t border-zinc-800/40 pt-2.5">
-                  <span>Budget: ₦{job.budget.toLocaleString()}</span>
-                  <span>{new Date(job.createdAt).toLocaleDateString()}</span>
+                
+                <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed font-light text-left break-words break-all">
+                  {job.description}
+                </p>
+                
+                <div className="border-t border-zinc-100/60 pt-3 flex justify-between items-center text-[10px] text-zinc-500 font-bold">
+                  <span className="text-zinc-650">Budget: <strong className="text-zinc-800 font-extrabold">₦{job.budget.toLocaleString()}</strong></span>
+                  <div className="flex items-center gap-2">
+                    {job.status === 'open' && (
+                      <span className="text-brand-600 font-extrabold bg-brand-50 border border-brand-100/50 px-2 py-0.5 rounded-full text-[9px]">{job.proposals.length} Bids</span>
+                    )}
+                    <span className="text-zinc-400 font-semibold">{new Date(job.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -540,10 +619,10 @@ export const SeekerHome: React.FC = () => {
       </div>
 
       {/* Create Opening Modal */}
-      <Modal isOpen={showCreateJobModal} onOpenChange={setShowCreateJobModal}>
-        <ModalBackdrop className="bg-black/60 backdrop-blur-sm" />
-        <ModalContainer className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <ModalDialog className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200">
+      <Modal isOpen={showCreateJobModal} onOpenChange={(open) => { if (!open) setShowCreateJobModal(false); }}>
+        <ModalBackdrop className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <ModalContainer className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200 text-white outline-none h-fit">
+            <ModalDialog className="outline-none w-full">
             <form onSubmit={handleCreateJob}>
               <ModalHeader className="px-6 pt-6 pb-2 border-b border-zinc-800/80">
                 <h3 className="text-base font-extrabold text-white">Post a Job Opening</h3>
@@ -565,50 +644,86 @@ export const SeekerHome: React.FC = () => {
 
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Category</Label>
-                  <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
-                    <select
-                      required
-                      value={jobCategory}
-                      onChange={e => setJobCategory(e.target.value)}
-                      className="flex-1 bg-transparent text-xs text-white focus:outline-none"
-                      style={{ colorScheme: 'dark' }}
-                    >
-                      <option value="" disabled className="bg-zinc-900">Select category</option>
-                      {categories.map(c => (
-                        <option key={c.id} value={c.id} className="bg-zinc-900">{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select 
+                    selectedKey={jobCategory} 
+                    onSelectionChange={(key) => setJobCategory(key as string)}
+                    placeholder="Select category"
+                  >
+                    <SelectTrigger className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl h-11 px-3.5 text-xs text-white flex justify-between items-center transition-colors focus-within:border-brand-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectPopover className="bg-zinc-950 border border-zinc-800 rounded-2xl p-1 text-white z-50 max-h-64 overflow-y-auto no-scrollbar outline-none">
+                      <ListBox items={categories} className="outline-none">
+                        {(cat) => (
+                          <ListBoxItem
+                            key={cat.id}
+                            textValue={cat.name}
+                            className="p-2.5 text-xs text-zinc-300 hover:text-white hover:bg-brand-500/20 rounded-xl cursor-pointer outline-none transition-colors"
+                          >
+                            {cat.name}
+                          </ListBoxItem>
+                        )}
+                      </ListBox>
+                    </SelectPopover>
+                  </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <TextField className="flex flex-col gap-1.5">
-                    <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Budget (₦)</Label>
-                    <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
-                      <input
-                        type="number"
-                        placeholder="e.g. 15000"
-                        required
-                        value={jobBudget}
-                        onChange={e => setJobBudget(e.target.value)}
-                        className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
-                      />
-                    </div>
-                  </TextField>
+                <TextField className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Budget (₦)</Label>
+                  <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      required
+                      value={jobBudget}
+                      onChange={e => setJobBudget(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
+                    />
+                  </div>
+                </TextField>
 
-                  <TextField className="flex flex-col gap-1.5">
-                    <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Location Address</Label>
-                    <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
-                      <input
-                        type="text"
-                        placeholder="e.g. Yaba, Lagos"
-                        required
-                        value={jobAddress}
-                        onChange={e => setJobAddress(e.target.value)}
-                        className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
-                      />
-                    </div>
-                  </TextField>
+                <TextField className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Location Address</Label>
+                  <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                    <input
+                      type="text"
+                      placeholder="e.g. Yaba, Lagos"
+                      required
+                      value={jobAddress}
+                      onChange={e => setJobAddress(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-white focus:outline-none placeholder:text-zinc-600"
+                    />
+                  </div>
+                </TextField>
+
+                {/* Picture of the problem */}
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Picture of the problem</Label>
+                  <div className="border border-dashed border-zinc-200 rounded-2xl p-4 bg-zinc-50/50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-zinc-50 transition-colors relative overflow-hidden h-24 text-center">
+                    {jobImage ? (
+                      <>
+                        <img src={jobImage} className="absolute inset-0 w-full h-full object-cover" alt="Preview" />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setJobImage(''); }}
+                          className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black transition-colors z-10"
+                        >
+                          <CloseCircle size={12} color="currentColor" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[10px] text-zinc-450 font-bold">Tap to upload issue photo</span>
+                        <span className="text-[8px] text-zinc-400">PNG, JPG up to 5MB</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, false)}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -644,102 +759,280 @@ export const SeekerHome: React.FC = () => {
             </form>
           </ModalDialog>
         </ModalContainer>
+      </ModalBackdrop>
       </Modal>
 
       {/* Job Details & Bids Modal */}
-      <Modal isOpen={showJobDetailsModal} onOpenChange={setShowJobDetailsModal}>
-        <ModalBackdrop className="bg-black/60 backdrop-blur-sm" />
-        <ModalContainer className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <ModalDialog className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200">
+      <Modal isOpen={showJobDetailsModal} onOpenChange={(open) => { if (!open) { setShowJobDetailsModal(false); setIsEditingJob(false); setIsDescExpanded(false); } }}>
+        <ModalBackdrop className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <ModalContainer className="bg-white border border-zinc-150 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200 text-zinc-800 outline-none h-fit">
+            <ModalDialog className="outline-none w-full">
             {selectedJob && (
-              <div className="flex flex-col max-h-[85vh]">
-                <ModalHeader className="px-6 pt-6 pb-2 border-b border-zinc-800/80 flex justify-between items-center text-left">
-                  <div>
-                    <span className="text-[9px] bg-brand-500/20 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{selectedJob.category}</span>
-                    <h3 className="text-base font-extrabold text-white mt-2.5 leading-snug">{selectedJob.title}</h3>
+              <div className="flex flex-col max-h-[85vh] overflow-hidden">
+                {selectedJob.imageUrl && !isEditingJob && (
+                  <div className="w-full h-48 shrink-0 relative overflow-hidden">
+                    <img src={selectedJob.imageUrl} className="w-full h-full object-cover" alt="Problem description" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent pointer-events-none" />
                   </div>
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                    selectedJob.status === 'open' ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/30' : 'bg-zinc-800 text-zinc-500'
-                  }`}>
-                    {selectedJob.status === 'open' ? 'Open' : 'Assigned'}
-                  </span>
+                )}
+                <ModalHeader className="px-6 pt-6 pb-3 border-b border-zinc-100 flex justify-between items-start text-left gap-4">
+                  <h3 className="text-base font-extrabold text-zinc-900 leading-snug">{selectedJob.title}</h3>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {selectedJob.status === 'open' && !isEditingJob && (
+                      <Button
+                        onClick={startEditingJob}
+                        size="sm"
+                        className="h-7 px-3 rounded-lg text-[9px] font-bold border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 flex items-center gap-1 transition-all"
+                      >
+                        Edit Details
+                      </Button>
+                    )}
+                    <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+                      selectedJob.status === 'open' ? 'bg-emerald-500' : selectedJob.status === 'assigned' ? 'bg-blue-500' : 'bg-zinc-400'
+                    }`} />
+                  </div>
                 </ModalHeader>
                 <ModalBody className="px-6 py-4 flex flex-col gap-4 overflow-y-auto no-scrollbar text-left">
-                  {/* Job Details Card */}
-                  <div className="bg-zinc-950 border border-zinc-800/80 rounded-2xl p-4 text-left">
-                    <p className="text-[11px] text-zinc-300 leading-relaxed font-light mb-3">{selectedJob.description}</p>
-                    <div className="grid grid-cols-2 gap-3 text-[10px] text-zinc-500 font-semibold border-t border-zinc-800/40 pt-3">
-                      <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Budget</span>
-                        <span className="text-zinc-200 font-bold">₦{selectedJob.budget.toLocaleString()}</span>
+                  {isEditingJob ? (
+                    <div className="flex flex-col gap-4">
+                      <TextField className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Job Title</Label>
+                        <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                          <input
+                            type="text"
+                            required
+                            value={editJobTitle}
+                            onChange={e => setEditJobTitle(e.target.value)}
+                            className="flex-1 bg-transparent text-xs text-white focus:outline-none"
+                          />
+                        </div>
+                      </TextField>
+
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Category</Label>
+                        <Select 
+                          selectedKey={editJobCategory} 
+                          onSelectionChange={(key) => setEditJobCategory(key as string)}
+                          placeholder="Select category"
+                        >
+                          <SelectTrigger className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl h-11 px-3.5 text-xs text-white flex justify-between items-center transition-colors focus-within:border-brand-500">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectPopover className="bg-zinc-950 border border-zinc-800 rounded-2xl p-1 text-white z-50 max-h-64 overflow-y-auto no-scrollbar outline-none">
+                            <ListBox items={categories} className="outline-none">
+                              {(cat) => (
+                                <ListBoxItem
+                                  key={cat.id}
+                                  textValue={cat.name}
+                                  className="p-2.5 text-xs text-zinc-300 hover:text-white hover:bg-brand-500/20 rounded-xl cursor-pointer outline-none transition-colors"
+                                >
+                                  {cat.name}
+                                </ListBoxItem>
+                              )}
+                            </ListBox>
+                          </SelectPopover>
+                        </Select>
                       </div>
-                      <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Location</span>
-                        <span className="text-zinc-200 font-bold truncate block">{selectedJob.address}</span>
+
+                      <TextField className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Budget (₦)</Label>
+                        <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                          <input
+                            type="number"
+                            required
+                            value={editJobBudget}
+                            onChange={e => setEditJobBudget(e.target.value)}
+                            className="flex-1 bg-transparent text-xs text-white focus:outline-none"
+                          />
+                        </div>
+                      </TextField>
+
+                      <TextField className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Location Address</Label>
+                        <div className="h-11 px-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-center transition-colors">
+                          <input
+                            type="text"
+                            required
+                            value={editJobAddress}
+                            onChange={e => setEditJobAddress(e.target.value)}
+                            className="flex-1 bg-transparent text-xs text-white focus:outline-none"
+                          />
+                        </div>
+                      </TextField>
+
+                      {/* Edit Picture of the problem */}
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Picture of the problem</Label>
+                        <div className="border border-dashed border-zinc-200 rounded-2xl p-4 bg-zinc-50/50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-zinc-50 transition-colors relative overflow-hidden h-24 text-center">
+                          {editJobImage ? (
+                            <>
+                              <img src={editJobImage} className="absolute inset-0 w-full h-full object-cover" alt="Preview" />
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setEditJobImage(''); }}
+                                className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black transition-colors z-10"
+                              >
+                                <CloseCircle size={12} color="currentColor" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-[10px] text-zinc-450 font-bold">Tap to upload issue photo</span>
+                              <span className="text-[8px] text-zinc-400">PNG, JPG up to 5MB</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, true)}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Job Description</Label>
+                        <div className="p-3.5 bg-zinc-950 border border-zinc-800 focus-within:border-brand-500 rounded-2xl flex items-start transition-colors">
+                          <textarea
+                            required
+                            rows={3}
+                            value={editJobDescription}
+                            onChange={e => setEditJobDescription(e.target.value)}
+                            className="flex-1 bg-transparent text-xs text-white focus:outline-none resize-none min-h-[70px]"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Bids List Header */}
-                  <div>
-                    <h4 className="text-xs font-bold text-white mb-2.5 flex items-center gap-1.5">
-                      <span>Proposals Received</span>
-                      <span className="h-5 px-1.5 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-full flex items-center justify-center font-extrabold">{selectedJob.proposals.length}</span>
-                    </h4>
-                    
-                    {selectedJob.proposals.length === 0 ? (
-                      <div className="text-center py-8 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-2xl">
-                        <p className="text-xs text-zinc-550 font-light">No bids received yet.</p>
-                        <p className="text-[10px] text-zinc-650 font-light mt-0.5">Local artisans are being notified.</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        {selectedJob.proposals.map((prop: any) => (
-                          <div key={prop.id} className="border border-zinc-800/80 rounded-2xl p-4 bg-zinc-950 flex flex-col gap-3 shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <img src={prop.artisanAvatar} className="h-9 w-9 rounded-full object-cover ring-1 ring-brand-500/20" alt="" />
-                              <div className="flex-1 min-w-0 text-left">
-                                <h5 className="text-xs font-bold text-white truncate">{prop.artisanName}</h5>
-                                <p className="text-[9px] text-zinc-500 font-semibold">{new Date(prop.createdAt).toLocaleDateString()}</p>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold block mb-0.5">Bid Price</span>
-                                <span className="text-xs font-black text-brand-400">₦{prop.price.toLocaleString()}</span>
-                              </div>
-                            </div>
-                            {prop.note && (
-                              <p className="text-[11px] text-zinc-400 italic bg-zinc-900 border border-zinc-850 p-2.5 rounded-xl text-left leading-relaxed font-light">
-                                "{prop.note}"
-                              </p>
-                            )}
-                            {selectedJob.status === 'open' && (
-                              <Button
-                                onClick={() => handleAcceptBid(prop.id)}
-                                size="sm"
-                                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold h-9 rounded-xl text-[10px] border-0 transition-all flex items-center justify-center gap-1 shadow-md shadow-brand-500/10"
-                              >
-                                Accept Bid & Hire
-                              </Button>
-                            )}
+                  ) : (
+                    <>
+                      {/* Job Details Card */}
+                      <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 text-left shadow-sm">
+                        <p className="text-xs text-zinc-650 leading-relaxed font-light mb-4 block whitespace-pre-line break-words break-all">
+                          {(() => {
+                            const desc = selectedJob.description.trim();
+                            if (desc.length <= 150 || isDescExpanded) {
+                              return (
+                                <>
+                                  {desc}
+                                  {desc.length > 150 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsDescExpanded(false)}
+                                      className="text-brand-500 hover:text-brand-600 font-bold ml-1 transition-colors text-[10px] focus:outline-none"
+                                    >
+                                      See Less
+                                    </button>
+                                  )}
+                                </>
+                              );
+                            }
+                            return (
+                              <>
+                                {desc.slice(0, 150)}...
+                                <button
+                                  type="button"
+                                  onClick={() => setIsDescExpanded(true)}
+                                  className="text-brand-500 hover:text-brand-600 font-bold ml-1 transition-colors text-[10px] focus:outline-none"
+                                >
+                                  See More
+                                </button>
+                              </>
+                            );
+                          })()}
+                        </p>
+                        <div className="grid grid-cols-2 gap-4 text-[10px] text-zinc-500 font-bold border-t border-zinc-200/60 pt-3">
+                          <div>
+                            <span className="block text-[8px] uppercase tracking-wider text-zinc-400 font-extrabold mb-0.5">Budget</span>
+                            <span className="text-zinc-800 font-extrabold text-xs block mt-0.5">₦{selectedJob.budget.toLocaleString()}</span>
                           </div>
-                        ))}
+                          <div>
+                            <span className="block text-[8px] uppercase tracking-wider text-zinc-400 font-extrabold mb-0.5">Location</span>
+                            <span className="text-zinc-700 font-extrabold text-xs block mt-0.5 leading-snug">{selectedJob.address}</span>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
+
+                      {/* Bids List Header */}
+                      <div>
+                        <h4 className="text-xs font-extrabold text-zinc-800 mb-3 flex items-center gap-1.5">
+                          <span>Proposals Received</span>
+                          <span className="h-5 px-2 text-[9px] bg-zinc-100 border border-zinc-200/80 text-zinc-600 rounded-full flex items-center justify-center font-extrabold">{selectedJob.proposals.length}</span>
+                        </h4>
+                        
+                        {selectedJob.proposals.length === 0 ? (
+                          <div className="text-center py-8 bg-zinc-50/50 border border-dashed border-zinc-200 rounded-2xl shadow-inner-sm">
+                            <p className="text-xs text-zinc-500 font-bold">No bids received yet</p>
+                            <p className="text-[10px] text-zinc-400 font-medium mt-0.5">Local artisans are being notified.</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-3">
+                            {selectedJob.proposals.map((prop: any) => (
+                              <div key={prop.id} className="border border-zinc-200/70 rounded-2xl p-4 bg-white flex flex-col gap-3 shadow-sm hover:shadow-md transition-all duration-300">
+                                <div className="flex items-center gap-3">
+                                  <img src={prop.artisanAvatar} className="h-9 w-9 rounded-full object-cover ring-1 ring-brand-500/20" alt="" />
+                                  <div className="flex-1 min-w-0 text-left">
+                                    <h5 className="text-xs font-extrabold text-zinc-900 truncate">{prop.artisanName}</h5>
+                                    <p className="text-[9px] text-zinc-400 font-bold">{new Date(prop.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-[8px] uppercase tracking-wider text-zinc-400 font-bold block mb-0.5">Bid Price</span>
+                                    <span className="text-xs font-extrabold text-brand-600">₦{prop.price.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                                {prop.note && (
+                                  <p className="text-xs text-zinc-650 italic bg-zinc-50 border border-zinc-150 p-2.5 rounded-xl text-left leading-relaxed font-light break-words break-all">
+                                    "{prop.note}"
+                                  </p>
+                                )}
+                                {selectedJob.status === 'open' && (
+                                  <Button
+                                    onClick={() => handleAcceptBid(prop.id)}
+                                    size="sm"
+                                    className="w-full bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold h-9 rounded-xl text-[10px] border border-brand-200/50 transition-all flex items-center justify-center gap-1 shadow-sm"
+                                  >
+                                    Accept Bid & Hire
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </ModalBody>
-                <ModalFooter className="px-6 pb-6 pt-2 border-t border-zinc-800/80">
-                  <Button
-                    onClick={() => setShowJobDetailsModal(false)}
-                    variant="outline"
-                    className="w-full border border-zinc-800 hover:bg-zinc-800 text-zinc-400 font-bold h-11 rounded-2xl text-xs transition-colors"
-                  >
-                    Close
-                  </Button>
+                <ModalFooter className="px-6 pb-6 pt-3 border-t border-zinc-100 flex gap-3">
+                  {isEditingJob ? (
+                    <>
+                      <Button
+                        onClick={() => setIsEditingJob(false)}
+                        variant="outline"
+                        className="flex-1 border border-zinc-200 hover:bg-zinc-50 text-zinc-500 font-bold h-11 rounded-2xl text-xs transition-all"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSaveChanges}
+                        className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold h-11 rounded-2xl text-xs shadow-md shadow-brand-500/10 border-0 transition-all"
+                      >
+                        Save Changes
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => setShowJobDetailsModal(false)}
+                      variant="outline"
+                      className="w-full border border-zinc-200 hover:bg-zinc-50 text-zinc-500 font-bold h-11 rounded-2xl text-xs transition-all"
+                    >
+                      Close
+                    </Button>
+                  )}
                 </ModalFooter>
               </div>
             )}
           </ModalDialog>
         </ModalContainer>
+      </ModalBackdrop>
       </Modal>
     </div>
   );

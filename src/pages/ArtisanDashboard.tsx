@@ -205,16 +205,18 @@ export const ArtisanDashboard: React.FC = () => {
                 >
                   <div className="flex justify-between items-start gap-3">
                     <div className="text-left">
-                      <span className="text-[9px] bg-brand-500/10 text-brand-300 border border-brand-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{job.category}</span>
-                      <h4 className="font-extrabold text-sm text-white mt-1.5 leading-snug">{job.title}</h4>
-                      <span className="text-[10px] text-zinc-450 block mt-0.5">Posted by: {job.seekerName}</span>
+                      <h4 className="font-extrabold text-sm text-white leading-snug">{job.title}</h4>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[10px] text-zinc-450">Posted by: {job.seekerName}</span>
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-[8px] uppercase tracking-wider text-zinc-500 font-bold block mb-0.5">Budget</span>
                       <span className="text-sm font-black text-white">₦{job.budget.toLocaleString()}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-zinc-400 font-light leading-relaxed text-left">{job.description}</p>
+                  <p className="text-xs text-zinc-400 font-light leading-relaxed text-left break-words break-all">{job.description}</p>
                   
                   <div className="h-px bg-zinc-855/60"></div>
                   
@@ -272,10 +274,10 @@ export const ArtisanDashboard: React.FC = () => {
       </div>
 
       {/* Bid Modal */}
-      <Modal isOpen={showBidModal} onOpenChange={setShowBidModal}>
-        <ModalBackdrop className="bg-black/60 backdrop-blur-sm" />
-        <ModalContainer className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <ModalDialog className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200">
+      <Modal isOpen={showBidModal} onOpenChange={(open) => { if (!open) setShowBidModal(false); }}>
+        <ModalBackdrop className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <ModalContainer className="bg-zinc-900 border border-zinc-800 w-full max-w-md shadow-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-200 text-white outline-none h-fit">
+            <ModalDialog className="outline-none w-full">
             {selectedJob && (
               <form onSubmit={handlePlaceBid}>
                 <ModalHeader className="px-6 pt-6 pb-2 border-b border-zinc-800/80">
@@ -336,6 +338,7 @@ export const ArtisanDashboard: React.FC = () => {
             )}
           </ModalDialog>
         </ModalContainer>
+      </ModalBackdrop>
       </Modal>
     </div>
   );
