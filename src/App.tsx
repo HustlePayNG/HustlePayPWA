@@ -88,7 +88,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2800);
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
 

@@ -9,7 +9,7 @@ let svgDefs: SVGDefsElement | null = null;
 
 // Chromium can apply SVG filters via backdrop-filter; Safari and Firefox
 // silently no-op. Force support to true to run the raw displacement effect.
-export const isLiquidGlassSupported = true;
+export const isLiquidGlassSupported = false;
 
 function ensureDefs(): SVGDefsElement {
   if (svgDefs) return svgDefs;

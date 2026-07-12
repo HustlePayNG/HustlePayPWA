@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@heroui/react';
 import { SearchNormal1, Card, MessageText } from 'iconsax-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export const IntroOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const slides = [
     {
@@ -59,9 +60,32 @@ export const IntroOnboarding: React.FC = () => {
     }
   ];
 
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const { scrollLeft, clientWidth } = containerRef.current;
+      if (clientWidth > 0) {
+        const index = Math.round(scrollLeft / clientWidth);
+        if (index !== slide && index >= 0 && index < slides.length) {
+          setSlide(index);
+        }
+      }
+    }
+  };
+
+  const scrollToSlide = (index: number) => {
+    if (containerRef.current) {
+      const clientWidth = containerRef.current.clientWidth;
+      containerRef.current.scrollTo({
+        left: index * clientWidth,
+        behavior: 'smooth'
+      });
+      setSlide(index);
+    }
+  };
+
   const handleNext = () => {
     if (slide < slides.length - 1) {
-      setSlide(slide + 1);
+      scrollToSlide(slide + 1);
     } else {
       handleComplete();
     }
@@ -69,7 +93,7 @@ export const IntroOnboarding: React.FC = () => {
 
   const handleBack = () => {
     if (slide > 0) {
-      setSlide(slide - 1);
+      scrollToSlide(slide - 1);
     }
   };
 
@@ -89,34 +113,49 @@ export const IntroOnboarding: React.FC = () => {
         />
       </div>
 
-      {/* Main Slides Content with Framer Motion AnimatePresence */}
-      <div className="my-auto py-6 flex flex-col justify-center min-h-[380px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-6"
-          >
-            {/* Slide Visual Area */}
-            <div className="relative py-4">
-              <div className="absolute inset-0 bg-brand-500/5 rounded-full blur-3xl -z-10 w-44 h-44 mx-auto"></div>
-              {slides[slide].visual}
-            </div>
+      {/* Main Slides Content with Scroll Snap */}
+      <div className="my-auto py-6 flex flex-col justify-center min-h-[380px] w-full overflow-hidden">
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full no-scrollbar"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {slides.map((s, idx) => (
+            <div
+              key={idx}
+              className="w-full shrink-0 snap-center snap-always flex flex-col gap-6"
+            >
+              {/* Slide Visual Area */}
+              <div className="relative py-4">
+                <div className="absolute inset-0 bg-brand-500/5 rounded-full blur-3xl -z-10 w-44 h-44 mx-auto animate-pulse"></div>
+                <motion.div
+                  animate={{
+                    scale: idx === slide ? 1 : 0.9,
+                    opacity: idx === slide ? 1 : 0.6
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {s.visual}
+                </motion.div>
+              </div>
 
-            {/* Slide Text Content */}
-            <div className="flex flex-col gap-2.5 max-w-sm mx-auto">
-              <h2 className="text-2xl font-black text-zinc-900 leading-tight">
-                {slides[slide].title}
-              </h2>
-              <p className="text-xs text-zinc-550 leading-relaxed font-light px-4">
-                {slides[slide].description}
-              </p>
+              {/* Slide Text Content */}
+              <div className="flex flex-col gap-2.5 max-w-sm mx-auto px-4">
+                <h2 className="text-2xl font-black text-zinc-900 leading-tight">
+                  {s.title}
+                </h2>
+                <p className="text-xs text-zinc-555 leading-relaxed font-light px-2">
+                  {s.description}
+                </p>
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          ))}
+        </div>
       </div>
 
       {/* Bottom Control Area */}
@@ -124,10 +163,14 @@ export const IntroOnboarding: React.FC = () => {
         {/* Progress dots */}
         <div className="flex gap-2">
           {slides.map((_, idx) => (
-            <div
+            <button
               key={idx}
-              className={`h-2 rounded-full transition-all duration-300 ${idx === slide ? 'w-6 bg-brand-500' : 'w-2 bg-zinc-300'}`}
-            ></div>
+              onClick={() => scrollToSlide(idx)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                idx === slide ? 'w-6 bg-brand-500' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
           ))}
         </div>
 

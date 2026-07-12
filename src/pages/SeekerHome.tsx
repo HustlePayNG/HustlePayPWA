@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb, type ArtisanProfile } from '../services/mockDb';
@@ -6,8 +6,6 @@ import {
   SearchNormal1, Setting4, Star, Location, CloseCircle,
   Heart, MessageText
 } from 'iconsax-react';
-import useEmblaCarousel from 'embla-carousel-react';
-import Autoplay from 'embla-carousel-autoplay';
 import { Requests } from './Requests';
 
 // ── Greeting helpers ──────────────────────────────────────────────
@@ -43,24 +41,48 @@ export const SeekerHome: React.FC = () => {
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [maxDistance, setMaxDistance] = useState<number | undefined>(undefined);
 
-  // Embla — peek of next card on the right
-  const autoplay = Autoplay({ delay: 3500, stopOnInteraction: true });
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    { loop: true, align: 'start', containScroll: false },
-    [autoplay]
-  );
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInteractedRef = useRef(false);
 
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const { scrollLeft, clientWidth } = containerRef.current;
+      if (clientWidth > 0) {
+        const childWidth = clientWidth * 0.78 + 12;
+        const index = Math.round(scrollLeft / childWidth);
+        if (index !== selectedIndex && index >= 0 && index < recommended.length) {
+          setSelectedIndex(index);
+        }
+      }
+    }
+  };
+
+  const scrollToSlide = (index: number) => {
+    if (containerRef.current) {
+      const clientWidth = containerRef.current.clientWidth;
+      const childWidth = clientWidth * 0.78 + 12;
+      containerRef.current.scrollTo({
+        left: index * childWidth,
+        behavior: 'smooth'
+      });
+      setSelectedIndex(index);
+    }
+  };
 
   useEffect(() => {
-    if (!emblaApi) return;
-    emblaApi.on('select', onSelect);
-    onSelect();
-  }, [emblaApi, onSelect]);
+    if (recommended.length === 0) return;
+    const interval = setInterval(() => {
+      if (isInteractedRef.current) return;
+      setSelectedIndex(prev => {
+        const next = (prev + 1) % recommended.length;
+        scrollToSlide(next);
+        return next;
+      });
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [recommended.length]);
 
   useEffect(() => {
     const all = mockDb.getArtisans(undefined, query, { minRating, maxDistance });
@@ -181,101 +203,110 @@ export const SeekerHome: React.FC = () => {
           </button>
         </div>
 
-        {/* Embla viewport — peek ~15% of next card */}
-        <div className="overflow-hidden pl-5" ref={emblaRef}>
-          <div className="flex" style={{ gap: '12px' }}>
-            {recommended.map((art, idx) => (
+        {/* Scroll Snap Carousel — peek ~15% of next card */}
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          onTouchStart={() => { isInteractedRef.current = true; }}
+          onMouseDown={() => { isInteractedRef.current = true; }}
+          className="flex overflow-x-auto gap-3 pl-5 pr-5 snap-x snap-mandatory no-scrollbar scroll-smooth w-full"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {recommended.map((art, idx) => (
+            <div
+              key={art.id}
+              className="flex-[0_0_78%] shrink-0 snap-start flex flex-col"
+            >
+              {/* ── Card header: avatar + name (above image) ── */}
+              <div className="flex items-center gap-2 mb-2 px-0.5">
+                <img
+                  src={art.avatarUrl}
+                  alt={art.fullName}
+                  className="h-7 w-7 rounded-full object-cover ring-1 ring-brand-500/30"
+                />
+                <span className="text-xs font-semibold text-zinc-200 truncate">{art.businessName}</span>
+                {idx === 0 && (
+                  <span className="ml-auto text-[9px] font-bold bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full shrink-0">
+                    Top Pick
+                  </span>
+                )}
+              </div>
+
+              {/* ── Image card ── */}
               <div
-                key={art.id}
-                className="flex-[0_0_78%] flex flex-col"
+                className="relative rounded-[22px] overflow-hidden cursor-pointer group"
+                style={{ height: '320px' }}
+                onClick={() => navigate(`/artisan/${art.id}`)}
               >
-                {/* ── Card header: avatar + name (above image) ── */}
-                <div className="flex items-center gap-2 mb-2 px-0.5">
-                  <img
-                    src={art.avatarUrl}
-                    alt={art.fullName}
-                    className="h-7 w-7 rounded-full object-cover ring-1 ring-brand-500/30"
-                  />
-                  <span className="text-xs font-semibold text-zinc-200 truncate">{art.businessName}</span>
-                  {idx === 0 && (
-                    <span className="ml-auto text-[9px] font-bold bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full shrink-0">
-                      Top Pick
-                    </span>
-                  )}
+                {/* Portrait image */}
+                <img
+                  src={art.avatarUrl}
+                  alt={art.fullName}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+
+                {/* Flat black tint ── ensures white text always readable regardless of image */}
+                <div className="absolute inset-0 bg-black/30" />
+                {/* Gradient deepens toward bottom for caption legibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+                {/* ── Bottom-left: caption + @handle ── */}
+                <div className="absolute bottom-4 left-4 right-14 pr-1">
+                  <p
+                    className="text-xs font-semibold leading-snug line-clamp-2"
+                    style={{ color: 'white' }}
+                  >
+                    {art.bio}
+                  </p>
+                  <span
+                    className="text-[10px] font-bold mt-0.5 block"
+                    style={{ color: 'rgba(255,255,255,0.75)' }}
+                  >
+                    @{art.businessName.toLowerCase().replace(/\s+/g, '')}
+                  </span>
                 </div>
 
-                {/* ── Image card ── */}
-                <div
-                  className="relative rounded-[22px] overflow-hidden cursor-pointer group"
-                  style={{ height: '320px' }}
-                  onClick={() => navigate(`/artisan/${art.id}`)}
-                >
-                  {/* Portrait image */}
-                  <img
-                    src={art.avatarUrl}
-                    alt={art.fullName}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-
-                  {/* Flat black tint — ensures white text always readable regardless of image */}
-                  <div className="absolute inset-0 bg-black/30" />
-                  {/* Gradient deepens toward bottom for caption legibility */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-
-                  {/* ── Bottom-left: caption + @handle ── */}
-                  <div className="absolute bottom-4 left-4 right-14 pr-1">
-                    <p
-                      className="text-xs font-semibold leading-snug line-clamp-2"
-                      style={{ color: 'white' }}
-                    >
-                      {art.bio}
-                    </p>
-                    <span
-                      className="text-[10px] font-bold mt-0.5 block"
-                      style={{ color: 'rgba(255,255,255,0.75)' }}
-                    >
-                      @{art.businessName.toLowerCase().replace(/\s+/g, '')}
-                    </span>
+                {/* ── Bottom-right: stats stack ── */}
+                <div className="absolute bottom-3 right-3 flex flex-col items-center gap-3">
+                  {/* Rating */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <Star size={15} color="white" variant="Broken" />
+                    </div>
+                    <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.ratingAverage.toFixed(1)}</span>
                   </div>
 
-                  {/* ── Bottom-right: stats stack ── */}
-                  <div className="absolute bottom-3 right-3 flex flex-col items-center gap-3">
-                    {/* Rating */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                        <Star size={15} color="white" variant="Broken" />
-                      </div>
-                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.ratingAverage.toFixed(1)}</span>
+                  {/* Reviews */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <MessageText size={15} color="white" variant="Broken" />
                     </div>
+                    <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.ratingCount}</span>
+                  </div>
 
-                    {/* Reviews */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                        <MessageText size={15} color="white" variant="Broken" />
-                      </div>
-                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.ratingCount}</span>
+                  {/* Saves/Hearts */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <Heart size={15} color="white" variant="Broken" />
                     </div>
+                    <span className="text-[9px] font-bold" style={{ color: 'white' }}>{fakeCount(art.id, 200)}</span>
+                  </div>
 
-                    {/* Saves/Hearts */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                        <Heart size={15} color="white" variant="Broken" />
-                      </div>
-                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{fakeCount(art.id, 200)}</span>
+                  {/* Distance */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <Location size={15} color="white" variant="Broken" />
                     </div>
-
-                    {/* Distance */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                        <Location size={15} color="white" variant="Broken" />
-                      </div>
-                      <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.distanceKm}km</span>
-                    </div>
+                    <span className="text-[9px] font-bold" style={{ color: 'white' }}>{art.distanceKm}km</span>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
         {/* Dot indicators */}
@@ -283,7 +314,7 @@ export const SeekerHome: React.FC = () => {
           {recommended.map((_, i) => (
             <button
               key={i}
-              onClick={() => emblaApi?.scrollTo(i)}
+              onClick={() => scrollToSlide(i)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === selectedIndex ? 'bg-brand-400 w-5' : 'bg-zinc-700 w-1.5'
               }`}
