@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Sms, Call, MessageText, ArrowDown2, ArrowUp2 } from 'iconsax-react';
+import { useNavigate } from 'react-router-dom';
+import { Sms, Call, MessageText, ArrowDown2, ArrowUp2, ArrowLeft } from 'iconsax-react';
 
 export const Help: React.FC = () => {
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleAccordion = (idx: number) => {
@@ -24,7 +26,15 @@ export const Help: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-950 text-left animate-in fade-in pb-20">
+    <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
+      {/* Top Circular Back Button */}
+      <button 
+        onClick={() => navigate(-1)} 
+        className="h-10 w-10 flex items-center justify-center bg-zinc-100/50 hover:bg-zinc-200/50 rounded-full text-zinc-600 mb-4 cursor-pointer transition-all active:scale-90"
+      >
+        <ArrowLeft size={18} color="currentColor" variant="Broken" />
+      </button>
+
       <h2 className="text-2xl font-extrabold text-white mb-2">Help & Support</h2>
       <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
         Search answers to common questions or reach out to HustlePay support representatives.

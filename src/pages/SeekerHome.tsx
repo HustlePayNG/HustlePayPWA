@@ -10,7 +10,8 @@ import {
   Modal, ModalBackdrop, ModalContainer, ModalDialog, 
   ModalBody, ModalHeader, ModalFooter, Button, TextField, 
   Label, toast, Spinner,
-  Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem
+  Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem,
+  Popover, PopoverTrigger, PopoverContent
 } from '@heroui/react';
 import { Requests } from './Requests';
 
@@ -29,6 +30,19 @@ const greetingSubtitles = [
   'Quality service, right at your door.',
 ];
 
+// ── Helpers ───────────────────────────────────────────────────────
+const getArtisanOccupation = (artisan: ArtisanProfile) => {
+  const name = artisan.businessName.toLowerCase();
+  const bio = artisan.bio.toLowerCase();
+  if (name.includes('plumb') || bio.includes('plumb')) return 'Plumber';
+  if (name.includes('elect') || bio.includes('elect')) return 'Electrician';
+  if (name.includes('carpen') || bio.includes('carpen') || name.includes('wood')) return 'Carpenter';
+  if (name.includes('clean') || bio.includes('clean')) return 'Cleaner';
+  if (name.includes('paint') || bio.includes('paint')) return 'Painter';
+  if (name.includes('mechanic') || name.includes('auto') || bio.includes('mechanic')) return 'Mechanic';
+  return 'Artisan';
+};
+
 // ── Filters ───────────────────────────────────────────────────────
 const RATING_OPTIONS = [4.0, 4.5, 4.8];
 const DISTANCE_OPTIONS = [2, 5, 10];
@@ -42,6 +56,7 @@ export const SeekerHome: React.FC = () => {
   const subtitle = greetingSubtitles[new Date().getMinutes() % greetingSubtitles.length];
 
   const [recommended, setRecommended] = useState<ArtisanProfile[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<ArtisanProfile[]>([]);
   const [query, setQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
@@ -246,6 +261,25 @@ export const SeekerHome: React.FC = () => {
   }, [recommended.length]);
 
   useEffect(() => {
+    try {
+      let stored = localStorage.getItem('hp_recently_viewed');
+      if (!stored) {
+        // Seed with first 3 mock profiles for presentation
+        const seedIds = mockDb.getArtisans(undefined, '', {}).slice(0, 3).map(a => a.id);
+        localStorage.setItem('hp_recently_viewed', JSON.stringify(seedIds));
+        stored = JSON.stringify(seedIds);
+      }
+      const ids: string[] = JSON.parse(stored);
+      const list = ids
+        .map(id => mockDb.getArtisanById(id))
+        .filter((art): art is ArtisanProfile => art !== undefined);
+      setRecentlyViewed(list);
+    } catch (e) {
+      console.error('Failed to load recently viewed:', e);
+    }
+  }, []);
+
+  useEffect(() => {
     const all = mockDb.getArtisans(undefined, query, { minRating, maxDistance });
     const sorted = [...all].sort((a, b) => b.ratingAverage - a.ratingAverage);
     setRecommended(sorted.slice(0, 8));
@@ -293,58 +327,63 @@ export const SeekerHome: React.FC = () => {
               </button>
             )}
           </div>
-          <button
-            onClick={() => setShowFilters(v => !v)}
-            className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${
-              showFilters || hasActiveFilters
-                ? 'bg-brand-500 border-brand-400 text-white'
-                : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white'
-            }`}
+          <Popover 
+            isOpen={showFilters} 
+            onOpenChange={setShowFilters}
           >
-            <Setting4 size={18} color="currentColor" variant="Broken" />
-          </button>
+            <PopoverTrigger>
+              <button
+                className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all cursor-pointer ${
+                  showFilters || hasActiveFilters
+                    ? 'bg-brand-500 border-brand-400 text-white'
+                    : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Setting4 size={18} color="currentColor" variant="Broken" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent placement="bottom end" className="p-0 border-none bg-transparent shadow-none">
+              <div className="glass border border-zinc-800/80 rounded-2xl p-4 w-72 text-left animate-in fade-in slide-in-from-top-2 duration-150 text-white">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-bold text-white">Filters</span>
+                  {hasActiveFilters && (
+                    <button onClick={clearFilters} className="text-[10px] text-brand-400 font-bold hover:underline cursor-pointer">
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <div className="mb-3">
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Min. Rating</p>
+                  <div className="flex gap-2">
+                    {RATING_OPTIONS.map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setMinRating(minRating === r ? undefined : r)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          minRating === r ? 'bg-brand-500 border-brand-400 text-white' : 'border-zinc-800 text-zinc-400 bg-transparent'
+                        }`}
+                      >★ {r}+</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Max. Distance</p>
+                  <div className="flex gap-2">
+                    {DISTANCE_OPTIONS.map(d => (
+                      <button
+                        key={d}
+                        onClick={() => setMaxDistance(maxDistance === d ? undefined : d)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          maxDistance === d ? 'bg-brand-500 border-brand-400 text-white' : 'border-zinc-800 text-zinc-400 bg-transparent'
+                        }`}
+                      >{d} km</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
-
-        {showFilters && (
-          <div className="mt-3 glass border border-zinc-800/80 rounded-2xl p-4 animate-in slide-in-from-top-2 duration-150">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold text-white">Filters</span>
-              {hasActiveFilters && (
-                <button onClick={clearFilters} className="text-[10px] text-brand-400 font-bold hover:underline">
-                  Clear all
-                </button>
-              )}
-            </div>
-            <div className="mb-3">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Min. Rating</p>
-              <div className="flex gap-2">
-                {RATING_OPTIONS.map(r => (
-                  <button
-                    key={r}
-                    onClick={() => setMinRating(minRating === r ? undefined : r)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                      minRating === r ? 'bg-brand-500 border-brand-400 text-white' : 'border-zinc-800 text-zinc-400 bg-transparent'
-                    }`}
-                  >★ {r}+</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-2">Max. Distance</p>
-              <div className="flex gap-2">
-                {DISTANCE_OPTIONS.map(d => (
-                  <button
-                    key={d}
-                    onClick={() => setMaxDistance(maxDistance === d ? undefined : d)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                      maxDistance === d ? 'bg-brand-500 border-brand-400 text-white' : 'border-zinc-800 text-zinc-400 bg-transparent'
-                    }`}
-                  >{d} km</button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Job Openings Trigger & List ── */}
@@ -353,7 +392,7 @@ export const SeekerHome: React.FC = () => {
           <div className="flex-1 pr-3">
             <h3 className="text-sm font-bold text-white mb-0.5">Need an Artisan?</h3>
             <p className="text-[11px] text-zinc-400 font-light leading-relaxed">
-              Post an open job request and get custom bids from local vetted professionals.
+              Post a request and get bids from vetted local pros.
             </p>
           </div>
           <Button
@@ -438,7 +477,7 @@ export const SeekerHome: React.FC = () => {
           onScroll={handleScroll}
           onTouchStart={() => { isInteractedRef.current = true; }}
           onMouseDown={() => { isInteractedRef.current = true; }}
-          className="flex overflow-x-auto gap-3 pl-5 pr-5 snap-x snap-mandatory no-scrollbar scroll-smooth w-full"
+          className="flex overflow-x-auto gap-3 pl-5 pr-5 scroll-pl-5 scroll-pr-5 snap-x snap-mandatory no-scrollbar scroll-smooth w-full"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -452,17 +491,26 @@ export const SeekerHome: React.FC = () => {
             >
               {/* ── Card header: avatar + name (above image) ── */}
               <div className="flex items-center gap-2 mb-2 px-0.5">
-                <img
-                  src={art.avatarUrl}
-                  alt={art.fullName}
-                  className="h-7 w-7 rounded-full object-cover ring-1 ring-brand-500/30"
-                />
+                <div className="relative shrink-0">
+                  <img
+                    src={art.avatarUrl}
+                    alt={art.fullName}
+                    className="h-7 w-7 rounded-full object-cover ring-1 ring-brand-500/30"
+                  />
+                  {idx === 0 && (
+                    <div className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-amber-450 text-white rounded-full flex items-center justify-center shadow-[0_1px_3px_rgba(0,0,0,0.15)] ring-1 ring-white">
+                      {/* Premium Crown SVG */}
+                      <svg 
+                        className="h-2 w-2 text-zinc-950 fill-current" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
+                        <path d="M2 20h20v2H2z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
                 <span className="text-xs font-semibold text-zinc-200 truncate">{art.businessName}</span>
-                {idx === 0 && (
-                  <span className="ml-auto text-[9px] font-bold bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full shrink-0">
-                    Top Pick
-                  </span>
-                )}
               </div>
 
               {/* ── Image card ── */}
@@ -551,6 +599,47 @@ export const SeekerHome: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* ── Recently Viewed ──────────────────────────────────────── */}
+      {recentlyViewed.length > 0 && (
+        <div className="mb-6">
+          {/* Header */}
+          <div className="px-5 mb-3">
+            <span className="text-sm font-bold text-white">Recently Viewed</span>
+          </div>
+
+          {/* Horizontal List */}
+          <div 
+            className="flex overflow-x-auto gap-3.5 pl-5 pr-5 scroll-pl-5 scroll-pr-5 no-scrollbar w-full"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {recentlyViewed.map(art => (
+              <button
+                key={art.id}
+                onClick={() => navigate(`/artisan/${art.id}`)}
+                className="flex flex-col items-center shrink-0 w-[72px] hover:scale-105 active:scale-95 transition-all text-center cursor-pointer"
+              >
+                {/* Avatar with gradient outline */}
+                <div className="h-13 w-13 rounded-2xl bg-gradient-to-tr from-brand-500/30 to-brand-500/10 p-[1.5px] shrink-0">
+                  <img
+                    src={art.avatarUrl}
+                    alt={art.fullName}
+                    className="h-full w-full rounded-2xl object-cover"
+                  />
+                </div>
+                {/* Name */}
+                <span className="text-[10px] font-extrabold text-zinc-200 truncate w-full mt-1.5 leading-snug">
+                  {art.fullName.split(' ')[0]}
+                </span>
+                {/* Occupation */}
+                <span className="text-[8px] text-zinc-500 truncate w-full">
+                  {getArtisanOccupation(art)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Top Categories ──────────────────────────────────────── */}
       {(() => {

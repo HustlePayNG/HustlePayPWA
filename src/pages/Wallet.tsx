@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb, type Transaction, type BankAccount } from '../services/mockDb';
 import { 
   Card, Add, ArrowDown, ArrowUp, 
-  Clock, Bank 
+  Clock, Bank, ArrowLeft 
 } from 'iconsax-react';
 import { 
   TextField, Label, Input, 
@@ -12,6 +13,7 @@ import {
 } from '@heroui/react';
 
 export const Wallet: React.FC = () => {
+  const navigate = useNavigate();
   const { user, wallet, refreshWallet } = useAppStore();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -130,6 +132,14 @@ export const Wallet: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
+      {/* Top Circular Back Button */}
+      <button 
+        onClick={() => navigate(-1)} 
+        className="h-10 w-10 flex items-center justify-center bg-zinc-100/50 hover:bg-zinc-200/50 rounded-full text-zinc-600 mb-4 cursor-pointer transition-all active:scale-90"
+      >
+        <ArrowLeft size={18} color="currentColor" variant="Broken" />
+      </button>
+
       <h2 className="text-2xl font-extrabold text-white mb-2">Ledger Balance</h2>
       <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
         Deposit funds into your multi-sig escrow, query pending payouts, and request instant bank settlement.

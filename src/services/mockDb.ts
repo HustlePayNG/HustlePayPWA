@@ -334,6 +334,63 @@ function initializeStorage() {
 
     localStorage.setItem('hp_users', JSON.stringify([defaultSeeker, defaultArtisan]));
   }
+
+  // Force-seed a mock chat booking if bookings list is empty (helps immediate chat/messages testing)
+  try {
+    const bookingsStr = localStorage.getItem('hp_bookings');
+    const bookings = bookingsStr ? JSON.parse(bookingsStr) : [];
+    if (bookings.length === 0) {
+      const defaultBooking: Booking = {
+        id: 'mock-booking-1',
+        reference: 'BK-8902',
+        seekerId: 'default-seeker',
+        artisanId: 'artisan-1',
+        artisanName: 'Tunde Bakare',
+        artisanAvatar: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150',
+        seekerName: 'Leslie Sterling',
+        seekerPhone: '+234 812 345 6789',
+        status: 'accepted',
+        serviceName: 'Pipe Leak Repair',
+        description: 'Water leak under the kitchen sink. Need immediate leak repair and pipe checking.',
+        photos: [],
+        scheduledStartAt: new Date(Date.now() + 86400000).toISOString(),
+        address: '42 Montgomery Road, Yaba, Lagos',
+        calloutFee: 3000,
+        estimatedAmount: 12000,
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        updatedAt: new Date(Date.now() - 3600000).toISOString()
+      };
+
+      const initialMessages: Message[] = [
+        {
+          id: 'msg-1',
+          bookingId: 'mock-booking-1',
+          senderId: 'artisan-1',
+          body: "Hello Leslie, I've seen your plumbing request. I can come over tomorrow morning.",
+          createdAt: new Date(Date.now() - 3500000).toISOString()
+        },
+        {
+          id: 'msg-2',
+          bookingId: 'mock-booking-1',
+          senderId: 'default-seeker',
+          body: "That works for me. What time will you be arriving?",
+          createdAt: new Date(Date.now() - 3000000).toISOString()
+        },
+        {
+          id: 'msg-3',
+          bookingId: 'mock-booking-1',
+          senderId: 'artisan-1',
+          body: "I'll be there by 9 AM sharp. Let me know if that works!",
+          createdAt: new Date(Date.now() - 2500000).toISOString()
+        }
+      ];
+
+      localStorage.setItem('hp_bookings', JSON.stringify([defaultBooking]));
+      localStorage.setItem('hp_messages', JSON.stringify(initialMessages));
+    }
+  } catch (e) {
+    console.error('Failed to seed default chat booking:', e);
+  }
 }
 
 // Ensure storage is seeded immediately

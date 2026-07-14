@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { User, Call, Location, ShieldSecurity } from 'iconsax-react';
+import { User, Call, Location, ShieldSecurity, ArrowLeft } from 'iconsax-react';
 import { TextField, Label, Input, Button, Spinner, toast, Fieldset } from '@heroui/react';
 import CustomCheckbox from '../components/CustomCheckbox';
 
 export const Settings: React.FC = () => {
+  const navigate = useNavigate();
   const { user, updateUserProfile } = useAppStore();
 
   const [name, setName] = useState(user?.fullName || '');
@@ -66,6 +68,14 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
+      {/* Top Circular Back Button */}
+      <button 
+        onClick={() => navigate(-1)} 
+        className="h-10 w-10 flex items-center justify-center bg-zinc-100/50 hover:bg-zinc-200/50 rounded-full text-zinc-600 mb-4 cursor-pointer transition-all active:scale-90"
+      >
+        <ArrowLeft size={18} color="currentColor" variant="Broken" />
+      </button>
+
       <h2 className="text-2xl font-extrabold text-white mb-2">Account Settings</h2>
       <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
         Edit your public profile contact information, billing coordinates, and privacy compliance preferences.

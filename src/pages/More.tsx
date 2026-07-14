@@ -5,12 +5,13 @@ import {
   Setting, Card, Danger, InfoCircle, 
   Refresh, ArrowRight2, Logout
 } from 'iconsax-react';
-import { Spinner, toast } from '@heroui/react';
+import { Spinner, toast, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 
 export const More: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeMode, switchMode, logout } = useAppStore();
   const [checking, setChecking] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   if (!user) return null;
 
@@ -19,7 +20,6 @@ export const More: React.FC = () => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready
         .then((registration) => {
-          // Force service worker update check
           return registration.update();
         })
         .then((registration) => {
@@ -59,113 +59,146 @@ export const More: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
-      <h2 className="text-2xl font-extrabold text-white mb-2">More Options</h2>
-      <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
-        Manage your profile coordinates, switcher modes, wallet status, and active system disputes.
-      </p>
-
-      {/* User Info Card */}
-      <div className="glass border-0 rounded-[28px] p-5 mb-5 bg-zinc-900/40 flex items-center gap-4">
+      {/* User Info Details Card */}
+      <div className="glass border-none rounded-[28px] p-6 mb-5 flex flex-col items-center text-center">
         <img 
           src={user.avatarUrl} 
-          className="h-14 w-14 rounded-2xl object-cover" 
+          className="h-20 w-20 rounded-full object-cover border-2 border-zinc-100 shadow-sm mb-3.5" 
           alt="Avatar" 
         />
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-white text-base truncate">{user.fullName}</h3>
-          <p className="text-xs text-zinc-400 truncate">{user.email}</p>
-          <div className="inline-block mt-2 text-[9px] bg-brand-500/20 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
-            {activeMode} Profile
-          </div>
+        <h3 className="font-extrabold text-zinc-900 text-lg">{user.fullName}</h3>
+        
+        <div className="flex items-center gap-1.5 mt-2.5 text-[10px] text-zinc-400 font-bold">
+          <button 
+            onClick={handleSwitchMode}
+            className="text-brand-600 hover:text-brand-700 font-extrabold uppercase tracking-wider cursor-pointer transition-colors border-none bg-transparent p-0 outline-none"
+            title="Click to switch profiles"
+          >
+            {activeMode === 'seeker' ? 'Service Seeker' : 'Professional Artisan'}
+          </button>
+          <span>•</span>
+          <span>Lagos</span>
         </div>
       </div>
 
-      {/* Menu Options Group */}
-      <div className="glass border-0 rounded-[28px] p-4 bg-zinc-900/40 flex flex-col gap-1 mb-5">
-        <button 
-          onClick={() => navigate('/settings')} 
-          className="flex items-center justify-between w-full px-3 py-3.5 rounded-xl hover:bg-zinc-800/40 transition-colors text-left"
-        >
-          <div className="flex items-center gap-3">
-            <Setting size={20} color="currentColor" variant="Broken" className="text-brand-400" />
-            <span className="text-zinc-200 text-sm font-semibold">Account Settings</span>
-          </div>
-          <ArrowRight2 size={16} color="currentColor" variant="Broken" className="text-zinc-500" />
-        </button>
+      {/* Menu Options Group 1 */}
+      <div className="glass border-none rounded-[28px] overflow-hidden mb-5">
+        <div className="flex flex-col">
+          <button 
+            onClick={() => navigate('/settings')} 
+            className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <Setting size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+              <span className="text-zinc-900 text-xs font-extrabold">Account Settings</span>
+            </div>
+            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
+          </button>
 
-        <button 
-          onClick={() => navigate('/wallet')} 
-          className="flex items-center justify-between w-full px-3 py-3.5 rounded-xl hover:bg-zinc-800/40 transition-colors text-left"
-        >
-          <div className="flex items-center gap-3">
-            <Card size={20} color="currentColor" variant="Broken" className="text-brand-400" />
-            <span className="text-zinc-200 text-sm font-semibold">My Wallet</span>
-          </div>
-          <ArrowRight2 size={16} color="currentColor" variant="Broken" className="text-zinc-500" />
-        </button>
+          <div className="mx-4 h-px bg-zinc-100" />
 
-        <button 
-          onClick={() => navigate('/disputes')} 
-          className="flex items-center justify-between w-full px-3 py-3.5 rounded-xl hover:bg-zinc-800/40 transition-colors text-left"
-        >
-          <div className="flex items-center gap-3">
-            <Danger size={20} color="currentColor" variant="Broken" className="text-brand-400" />
-            <span className="text-zinc-200 text-sm font-semibold">Disputes</span>
-          </div>
-          <ArrowRight2 size={16} color="currentColor" variant="Broken" className="text-zinc-500" />
-        </button>
+          <button 
+            onClick={() => navigate('/wallet')} 
+            className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <Card size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+              <span className="text-zinc-900 text-xs font-extrabold">My Wallet</span>
+            </div>
+            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
+          </button>
 
-        <button 
-          onClick={() => navigate('/help')} 
-          className="flex items-center justify-between w-full px-3 py-3.5 rounded-xl hover:bg-zinc-800/40 transition-colors text-left"
-        >
-          <div className="flex items-center gap-3">
-            <InfoCircle size={20} color="currentColor" variant="Broken" className="text-brand-400" />
-            <span className="text-zinc-200 text-sm font-semibold">Help & Support</span>
-          </div>
-          <ArrowRight2 size={16} color="currentColor" variant="Broken" className="text-zinc-500" />
-        </button>
+          <div className="mx-4 h-px bg-zinc-100" />
 
-        <button 
-          onClick={handleCheckForUpdates} 
-          disabled={checking}
-          className="flex items-center justify-between w-full px-3 py-3.5 rounded-xl hover:bg-zinc-800/40 transition-colors text-left disabled:opacity-80"
-        >
-          <div className="flex items-center gap-3">
-            <Refresh size={20} color="currentColor" variant="Broken" className={`text-brand-400 ${checking ? 'animate-spin' : ''}`} />
-            <span className="text-zinc-200 text-sm font-semibold">Check for Updates</span>
-          </div>
-          {checking ? (
-            <Spinner size="sm" color="current" className="text-brand-500 mr-1" />
-          ) : (
-            <span className="text-[10px] text-brand-600 bg-brand-50/80 border border-brand-100/50 px-2.5 py-0.5 rounded-full mr-1 font-bold">v1.3.0</span>
-          )}
-        </button>
+          <button 
+            onClick={() => navigate('/disputes')} 
+            className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <Danger size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+              <span className="text-zinc-900 text-xs font-extrabold">Disputes</span>
+            </div>
+            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
+          </button>
+
+          <div className="mx-4 h-px bg-zinc-100" />
+
+          <button 
+            onClick={() => navigate('/help')} 
+            className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <InfoCircle size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+              <span className="text-zinc-900 text-xs font-extrabold">Help & Support</span>
+            </div>
+            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
+          </button>
+        </div>
       </div>
 
-      {/* Switch Mode Card */}
-      <div className="glass border-0 rounded-[28px] p-5 mb-5 bg-zinc-900/40 flex flex-col gap-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Access Switch</h4>
-        <button 
-          onClick={handleSwitchMode}
-          className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 text-brand-300 text-sm font-bold transition-all text-left"
-        >
-          <div className="flex items-center gap-3">
-            <Refresh size={18} color="currentColor" variant="Broken" className="animate-spin-slow" />
-            <span>Switch to {activeMode === 'seeker' ? 'Artisan' : 'Seeker'} Mode</span>
-          </div>
-          <ArrowRight2 size={16} color="currentColor" variant="Broken" />
-        </button>
+      {/* Menu Options Group 2 */}
+      <div className="glass border-none rounded-[28px] overflow-hidden">
+        <div className="flex flex-col">
+          <button 
+            onClick={handleCheckForUpdates} 
+            disabled={checking}
+            className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left disabled:opacity-80 cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <Refresh size={18} color="currentColor" variant="Broken" className={`text-brand-500 ${checking ? 'animate-spin' : ''}`} />
+              <span className="text-zinc-900 text-xs font-extrabold">Check for Updates</span>
+            </div>
+            {checking ? (
+              <Spinner size="sm" color="current" className="text-brand-500 mr-1" />
+            ) : (
+              <span className="text-[9px] text-brand-600 bg-brand-50 border border-brand-100/50 px-2 py-0.5 rounded-md mr-1 font-bold">v1.3.0</span>
+            )}
+          </button>
+
+          <div className="mx-4 h-px bg-zinc-100" />
+
+          <button 
+            onClick={() => setShowLogoutConfirm(true)}
+            className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <Logout size={18} color="currentColor" variant="Broken" className="text-red-500" />
+              <span className="text-zinc-900 text-xs font-extrabold">Log Out</span>
+            </div>
+            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
+          </button>
+        </div>
       </div>
 
-      {/* Logout Card */}
-      <button 
-        onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-2.5 px-4 py-4 rounded-[24px] bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-bold transition-all"
-      >
-        <Logout size={20} color="currentColor" variant="Broken" />
-        <span>Log Out</span>
-      </button>
+      {/* HeroUI Logout Confirmation Modal */}
+      <Modal isOpen={showLogoutConfirm} onOpenChange={(open) => { if (!open) setShowLogoutConfirm(false); }}>
+        <ModalBackdrop className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <ModalContainer className="glass border border-zinc-200 max-w-sm w-full rounded-[28px] p-6 text-zinc-900 bg-white/95">
+            <ModalDialog className="outline-none">
+              <ModalHeader className="flex flex-col gap-1 text-left">
+                <span className="font-extrabold text-sm text-zinc-900">Confirm Log Out</span>
+              </ModalHeader>
+              <ModalBody className="text-xs text-zinc-500 mt-2 leading-relaxed text-left">
+                Are you sure you want to log out of your HustlePay account? You will need to sign in again to access bookings.
+              </ModalBody>
+              <ModalFooter className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 h-9 border border-zinc-200 rounded-xl hover:bg-zinc-55 text-zinc-600 text-xs font-bold transition-all cursor-pointer bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 h-9 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer border-none"
+                >
+                  Log Out
+                </button>
+              </ModalFooter>
+            </ModalDialog>
+          </ModalContainer>
+        </ModalBackdrop>
+      </Modal>
     </div>
   );
 };

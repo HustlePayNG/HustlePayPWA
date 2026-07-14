@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { mockDb, type Dispute } from '../services/mockDb';
-// lucide-react imports removed
+import { ArrowLeft } from 'iconsax-react';
 
 export const Disputes: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAppStore();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
 
@@ -23,7 +25,15 @@ export const Disputes: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-950 text-left animate-in fade-in">
+    <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
+      {/* Top Circular Back Button */}
+      <button 
+        onClick={() => navigate(-1)} 
+        className="h-10 w-10 flex items-center justify-center bg-zinc-100/50 hover:bg-zinc-200/50 rounded-full text-zinc-600 mb-4 cursor-pointer transition-all active:scale-90"
+      >
+        <ArrowLeft size={18} color="currentColor" variant="Broken" />
+      </button>
+
       <h2 className="text-2xl font-extrabold text-white mb-2">Disputes Dashboard</h2>
       <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
         Track the status of disputed bookings. HustlePay administration moderates claims manually.

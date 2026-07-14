@@ -33,6 +33,8 @@ export const ReloadPrompt: React.FC = () => {
         timeout: 0, // Persistent toast until clicked or dismissed
         actionProps: {
           children: 'Reload & Update',
+          style: { backgroundColor: '#33658a', color: '#ffffff' },
+          className: 'bg-brand-500 hover:bg-brand-650 text-white font-bold text-white-force',
           onPress: () => {
             updateServiceWorker(true);
             setNeedRefresh(false);

@@ -14,6 +14,15 @@ export const ArtisanDetail: React.FC = () => {
   useEffect(() => {
     if (id) {
       setArtisan(mockDb.getArtisanById(id));
+      // Track recently viewed
+      try {
+        const stored = localStorage.getItem('hp_recently_viewed');
+        let list: string[] = stored ? JSON.parse(stored) : [];
+        list = [id, ...list.filter(item => item !== id)].slice(0, 5);
+        localStorage.setItem('hp_recently_viewed', JSON.stringify(list));
+      } catch (e) {
+        console.error('Failed to track recently viewed:', e);
+      }
     }
   }, [id]);
 

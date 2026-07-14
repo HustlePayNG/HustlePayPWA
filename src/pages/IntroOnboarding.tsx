@@ -166,8 +166,8 @@ export const IntroOnboarding: React.FC = () => {
             <button
               key={idx}
               onClick={() => scrollToSlide(idx)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === slide ? 'w-6 bg-brand-500' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
+              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                idx === slide ? 'w-6 bg-brand-500' : 'w-2 bg-brand-500/30 hover:bg-brand-500/50'
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />
