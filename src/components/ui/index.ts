@@ -11,3 +11,6 @@ export { TabBar, type TabBarProps, type TabItem } from './TabBar';
 export { SearchInput, type SearchInputProps } from './SearchInput';
 export { PageHeader, type PageHeaderProps } from './PageHeader';
 export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
+export { NotificationSettings } from './NotificationSettings';
+export { Switch } from './Switch';
+export { Divider } from './Divider';

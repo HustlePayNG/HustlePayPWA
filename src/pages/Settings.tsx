@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { User, Call, Location, ShieldSecurity, ArrowLeft } from 'iconsax-react';
-import { TextField, Label, Input, Button, Spinner, toast, Fieldset } from '@heroui/react';
+import { TextField, Label, Input, Button, Spinner, Fieldset, toast } from '@heroui/react';
+
 import CustomCheckbox from '../components/CustomCheckbox';
+import { NotificationSettings } from '../components/ui';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -12,10 +14,10 @@ export const Settings: React.FC = () => {
   const [name, setName] = useState(user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState(user?.address?.formattedAddress || '');
-  
+
   // NDPR compliance toggles (GEN-7)
   const [marketingConsent, setMarketingConsent] = useState(user?.kycStatus ? false : true);
-  
+
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -69,8 +71,8 @@ export const Settings: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
       {/* Top Circular Back Button */}
-      <button 
-        onClick={() => navigate(-1)} 
+      <button
+        onClick={() => navigate(-1)}
         className="h-10 w-10 flex items-center justify-center bg-zinc-100/50 hover:bg-zinc-200/50 rounded-full text-zinc-600 mb-4 cursor-pointer transition-all active:scale-90"
       >
         <ArrowLeft size={18} color="currentColor" variant="Broken" />
@@ -175,6 +177,11 @@ export const Settings: React.FC = () => {
             </CustomCheckbox>
           </Fieldset.Group>
         </Fieldset>
+
+        {/* Notification Settings */}
+        <div className="mt-2">
+          <NotificationSettings />
+        </div>
 
         <div className="w-full mt-2">
           <Button

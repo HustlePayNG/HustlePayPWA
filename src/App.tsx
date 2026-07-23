@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAppStore } from './store';
 import AppSplash from './components/AppSplash';
-import { ToastProvider } from '@heroui/react';
+import { ToastProvider, toast } from '@heroui/react';
 
 // Layout & PWA Prompt
 import MobileFrame from './components/MobileFrame';
@@ -273,6 +273,8 @@ export const App: React.FC = () => {
           </Routes>
         </MobileFrame>
 
+        {/* Service Worker Message Listener */}
+        <ServiceWorkerListener />
         {/* PWA Update Prompter */}
         <ReloadPrompt />
         {/* PWA Downloader Prompt */}
@@ -280,6 +282,64 @@ export const App: React.FC = () => {
       </BrowserRouter>
     </>
   );
+};
+
+// Listen for service worker events and handle push-notification clicks/foreground toasts
+const ServiceWorkerListener: React.FC = () => {
+  const navigate = useNavigate();
+  const { refreshNotifications } = useAppStore();
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data) return;
+
+      if (data.type === 'NAVIGATE') {
+        navigate(data.url);
+      } else if (data.type === 'PUSH_NOTIFICATION') {
+        // Refresh appropriate store data depending on notification type
+        refreshNotifications();
+        
+        const payload = data.payload;
+        if (payload) {
+          // Show in-app notification toast
+          toast.success(payload.title, {
+            description: payload.body,
+            timeout: 5000,
+            actionProps: {
+              children: 'View',
+              style: { backgroundColor: '#33658a', color: '#ffffff' },
+              className: 'bg-brand-500 hover:bg-brand-650 text-white font-bold text-white-force',
+              onPress: () => {
+                // Determine navigation from payload
+                let targetUrl = '/';
+                const notifData = payload.data || {};
+                if (notifData.bookingId) {
+                  targetUrl = `/booking-flow/${notifData.bookingId}`;
+                } else if (notifData.chatId) {
+                  targetUrl = `/chat/${notifData.chatId}`;
+                } else if (notifData.disputeId) {
+                  targetUrl = `/disputes`;
+                } else if (payload.tag === 'payment-received' || payload.tag === 'withdrawal-complete') {
+                  targetUrl = `/wallet`;
+                }
+                navigate(targetUrl);
+              }
+            }
+          });
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+    };
+  }, [navigate, refreshNotifications]);
+
+  return null;
 };
 
 export default App;

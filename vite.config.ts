@@ -11,25 +11,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
-        globIgnores: ['**/*.mp4', '**/*.webm'],
-        maximumFileSizeToCacheInBytes: 3000000,
-        runtimeCaching: [
-          {
-            urlPattern: /\.(?:mp4|webm)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'hustlepay-videos',
-              expiration: {
-                maxEntries: 2,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              },
-              rangeRequests: true
-            }
-          }
-        ]
-      },
+      // Use custom service worker for push notifications
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.ts',
       manifest: {
         name: 'HustlePay — Service Marketplace',
         short_name: 'HustlePay',
@@ -54,6 +39,51 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
+          }
+        ],
+        categories: ['business', 'finance', 'productivity'],
+        shortcuts: [
+          {
+            name: 'Book a Service',
+            short_name: 'Book',
+            description: 'Find and book a vetted artisan',
+            url: '/discover',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'My Bookings',
+            short_name: 'Bookings',
+            description: 'View your active and past bookings',
+            url: '/bookings',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Wallet',
+            short_name: 'Wallet',
+            description: 'Manage your HustlePay wallet',
+            url: '/wallet',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
+        ],
+        screenshots: [],
+        prefer_related_applications: false
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        globIgnores: ['**/*.mp4', '**/*.webm'],
+        maximumFileSizeToCacheInBytes: 3000000,
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:mp4|webm)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'hustlepay-videos',
+              expiration: {
+                maxEntries: 2,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              rangeRequests: true
+            }
           }
         ]
       },
