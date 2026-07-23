@@ -14,7 +14,7 @@ import {
 
 export const Wallet: React.FC = () => {
   const navigate = useNavigate();
-  const { user, wallet, refreshWallet } = useAppStore();
+  const { user, wallet, refreshWallet, refreshNotifications } = useAppStore();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -37,6 +37,10 @@ export const Wallet: React.FC = () => {
 
   useEffect(() => {
     if (user) {
+      // Clear wallet/payment notifications
+      mockDb.markNotificationsByKeywordsAsRead(user.id, ['wallet', 'payment', 'withdraw', 'received', 'paid', 'refund']);
+      refreshNotifications();
+
       // Sync local component state with DB
       setTransactions(mockDb.getTransactions(user.id));
       const banks = mockDb.getBankAccounts(user.id);
@@ -45,7 +49,7 @@ export const Wallet: React.FC = () => {
         setSelectedBankId(banks[0].id);
       }
     }
-  }, [user, wallet]);
+  }, [user, selectedBankId, refreshNotifications]);
 
   if (!user) return null;
 

@@ -6,18 +6,22 @@ import { MessageText, ArrowRight2 } from 'iconsax-react';
 
 export const Messages: React.FC = () => {
   const navigate = useNavigate();
-  const { user, activeMode } = useAppStore();
+  const { user, activeMode, refreshNotifications } = useAppStore();
   const [chatThreads, setChatThreads] = useState<Booking[]>([]);
 
   useEffect(() => {
     if (user) {
+      // Clear message notifications
+      mockDb.markNotificationsByKeywordsAsRead(user.id, ['message', 'chat']);
+      refreshNotifications();
+
       // Get all bookings for the current user and active mode
       const list = mockDb.getBookings(user.id, activeMode);
       // Sort bookings by creation date descending to show newest first
       const sorted = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setChatThreads(sorted);
     }
-  }, [user, activeMode]);
+  }, [user, activeMode, refreshNotifications]);
 
   if (!user) return null;
 

@@ -22,8 +22,16 @@ export function usePushNotifications() {
       try {
         const initialized = await pushNotificationService.initialize(user.id);
         if (initialized) {
-          setPermission(pushNotificationService.getPermissionState());
-          setIsSubscribed(pushNotificationService.isSubscribed());
+          const currentPermission = pushNotificationService.getPermissionState();
+          setPermission(currentPermission);
+          
+          let subscribed = pushNotificationService.isSubscribed();
+          // Auto-subscribe by default if permission is already granted but not subscribed
+          if (currentPermission === 'granted' && !subscribed) {
+            const sub = await pushNotificationService.subscribe();
+            subscribed = sub !== null;
+          }
+          setIsSubscribed(subscribed);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initialize push notifications');

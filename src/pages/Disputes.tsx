@@ -6,14 +6,18 @@ import { ArrowLeft } from 'iconsax-react';
 
 export const Disputes: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAppStore();
+  const { user, refreshNotifications } = useAppStore();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
 
   useEffect(() => {
     if (user) {
+      // Clear dispute notifications
+      mockDb.markNotificationsByKeywordsAsRead(user.id, ['dispute']);
+      refreshNotifications();
+
       setDisputes(mockDb.getDisputes(user.id));
     }
-  }, [user]);
+  }, [user, refreshNotifications]);
 
   const getStatusColor = (status: Dispute['status']) => {
     switch (status) {

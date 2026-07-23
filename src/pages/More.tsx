@@ -3,15 +3,60 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { 
   Setting, Card, Danger, InfoCircle, 
-  Refresh, ArrowRight2, Logout
+  Refresh, ArrowRight2, Logout, NotificationBing
 } from 'iconsax-react';
+import { Switch } from '../components/ui';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { Spinner, toast, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 
 export const More: React.FC = () => {
   const navigate = useNavigate();
-  const { user, activeMode, switchMode, logout } = useAppStore();
+  const { user, activeMode, switchMode, logout, notifications } = useAppStore();
   const [checking, setChecking] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const hasWalletNotification = notifications.some(
+    n => !n.read && (
+      n.title.toLowerCase().includes('payment') || 
+      n.title.toLowerCase().includes('withdrawal') || 
+      n.body.toLowerCase().includes('pay') || 
+      n.body.toLowerCase().includes('refund') || 
+      n.body.toLowerCase().includes('wallet')
+    )
+  );
+
+  const hasDisputeNotification = notifications.some(
+    n => !n.read && (
+      n.title.toLowerCase().includes('dispute') || 
+      n.body.toLowerCase().includes('dispute')
+    )
+  );
+
+  const {
+    isSubscribed,
+    isLoading,
+    subscribe,
+    unsubscribe,
+    permission,
+    requestPermission
+  } = usePushNotifications();
+
+  const handleTogglePush = async () => {
+    if (isLoading) return;
+    
+    if (isSubscribed) {
+      await unsubscribe();
+    } else {
+      if (permission === 'default') {
+        const perm = await requestPermission();
+        if (perm === 'granted') {
+          await subscribe();
+        }
+      } else {
+        await subscribe();
+      }
+    }
+  };
 
   if (!user) return null;
 
@@ -97,15 +142,37 @@ export const More: React.FC = () => {
 
           <div className="mx-4 h-px bg-zinc-100" />
 
+          {/* Push Notifications Toggle */}
+          <div className="flex items-center justify-between w-full p-4 transition-colors text-left">
+            <div className="flex items-center gap-3.5">
+              <NotificationBing size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+              <span className="text-zinc-900 text-xs font-extrabold">Push Notifications</span>
+            </div>
+            <Switch
+              checked={isSubscribed}
+              onValueChange={handleTogglePush}
+              isDisabled={isLoading}
+            />
+          </div>
+
+          <div className="mx-4 h-px bg-zinc-100" />
+
           <button 
             onClick={() => navigate('/wallet')} 
             className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center gap-3.5">
-              <Card size={18} color="currentColor" variant="Broken" className="text-brand-500" />
-              <span className="text-zinc-900 text-xs font-extrabold">My Wallet</span>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3.5">
+                <div className="relative flex items-center justify-center">
+                  <Card size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+                  {hasWalletNotification && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 ring-1 ring-white" />
+                  )}
+                </div>
+                <span className="text-zinc-900 text-xs font-extrabold">My Wallet</span>
+              </div>
+              <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
             </div>
-            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
           </button>
 
           <div className="mx-4 h-px bg-zinc-100" />
@@ -114,11 +181,18 @@ export const More: React.FC = () => {
             onClick={() => navigate('/disputes')} 
             className="flex items-center justify-between w-full p-4 hover:bg-zinc-50/40 active:bg-zinc-100/40 transition-colors text-left cursor-pointer"
           >
-            <div className="flex items-center gap-3.5">
-              <Danger size={18} color="currentColor" variant="Broken" className="text-brand-500" />
-              <span className="text-zinc-900 text-xs font-extrabold">Disputes</span>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3.5">
+                <div className="relative flex items-center justify-center">
+                  <Danger size={18} color="currentColor" variant="Broken" className="text-brand-500" />
+                  {hasDisputeNotification && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 ring-1 ring-white" />
+                  )}
+                </div>
+                <span className="text-zinc-900 text-xs font-extrabold">Disputes</span>
+              </div>
+              <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
             </div>
-            <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-400" />
           </button>
 
           <div className="mx-4 h-px bg-zinc-100" />
@@ -135,6 +209,7 @@ export const More: React.FC = () => {
           </button>
         </div>
       </div>
+
 
       {/* Menu Options Group 2 */}
       <div className="glass border-none rounded-[28px] overflow-hidden">

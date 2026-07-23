@@ -5,7 +5,6 @@ import { User, Call, Location, ShieldSecurity, ArrowLeft } from 'iconsax-react';
 import { TextField, Label, Input, Button, Spinner, Fieldset, toast } from '@heroui/react';
 
 import CustomCheckbox from '../components/CustomCheckbox';
-import { NotificationSettings } from '../components/ui';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -85,9 +84,9 @@ export const Settings: React.FC = () => {
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">
         <Fieldset className="glass border border-zinc-850 rounded-[28px] p-5 flex flex-col gap-4">
-          <Fieldset.Legend className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider text-zinc-400">
+          <div className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider text-zinc-400">
             <User size={14} color="currentColor" variant="Broken" className="text-brand-400" /> Public Credentials
-          </Fieldset.Legend>
+          </div>
 
           <Fieldset.Group className="flex flex-col gap-4 w-full">
             <TextField className="flex flex-col gap-1.5 w-full">
@@ -156,9 +155,9 @@ export const Settings: React.FC = () => {
 
         {/* NDPR compliance settings (GEN-7) */}
         <Fieldset className="glass border border-zinc-855 rounded-[28px] p-5 flex flex-col gap-3">
-          <Fieldset.Legend className="flex items-center gap-1.5 mb-1 text-xs font-bold uppercase tracking-wider text-zinc-400">
+          <div className="flex items-center gap-1.5 mb-1 text-xs font-bold uppercase tracking-wider text-zinc-400">
             <ShieldSecurity size={14} color="currentColor" variant="Broken" className="text-brand-400" /> NDPR Privacy Toggles
-          </Fieldset.Legend>
+          </div>
 
           <Fieldset.Group className="flex flex-col gap-3.5 text-xs text-zinc-400 w-full">
             <CustomCheckbox
@@ -178,10 +177,6 @@ export const Settings: React.FC = () => {
           </Fieldset.Group>
         </Fieldset>
 
-        {/* Notification Settings */}
-        <div className="mt-2">
-          <NotificationSettings />
-        </div>
 
         <div className="w-full mt-2">
           <Button

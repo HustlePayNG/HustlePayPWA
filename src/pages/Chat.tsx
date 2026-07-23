@@ -7,7 +7,7 @@ import { ArrowLeft, Send2 } from 'iconsax-react';
 export const Chat: React.FC = () => {
   const bookingId = useParams<{ bookingId: string }>().bookingId;
   const navigate = useNavigate();
-  const { user } = useAppStore();
+  const { user, refreshNotifications } = useAppStore();
 
   const [booking, setBooking] = useState<Booking | undefined>(undefined);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -16,12 +16,16 @@ export const Chat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (bookingId) {
+    if (bookingId && user) {
+      // Clear message notifications
+      mockDb.markNotificationsByKeywordsAsRead(user.id, ['message', 'chat']);
+      refreshNotifications();
+
       const bk = mockDb.getBookingById(bookingId);
       setBooking(bk);
       loadMessages();
     }
-  }, [bookingId]);
+  }, [bookingId, user, refreshNotifications]);
 
   useEffect(() => {
     scrollToBottom();

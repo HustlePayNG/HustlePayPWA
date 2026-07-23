@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb } from '../services/mockDb';
 import {
-  Home, SearchNormal1, MessageText, NotificationBing, CloseCircle
+  Home, SearchNormal1, MessageText
 } from 'iconsax-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,9 +13,10 @@ interface TabButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
+  hasBadge?: boolean;
 }
 
-const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, icon, label }) => {
+const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, icon, label, hasBadge }) => {
   return (
     <button
       onClick={onClick}
@@ -25,13 +25,18 @@ const TabButton: React.FC<TabButtonProps> = ({ isActive, onClick, icon, label })
       <motion.div
         layout
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-        className={`flex items-center gap-1.5 h-full rounded-full transition-colors duration-300 ${
+        className={`flex items-center gap-1.5 h-full rounded-full transition-colors duration-300 relative ${
           isActive
             ? 'bg-brand-500 text-white px-3.5 font-bold text-white-force'
             : 'text-zinc-500 hover:text-zinc-300 px-2.5'
         }`}
       >
-        {icon}
+        <div className="relative flex items-center justify-center">
+          {icon}
+          {hasBadge && (
+            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 ring-1 ring-zinc-950" />
+          )}
+        </div>
         <AnimatePresence initial={false}>
           {isActive && (
             <motion.span
@@ -57,10 +62,24 @@ interface AppLayoutProps {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, activeMode, unreadCount, refreshNotifications } = useAppStore();
+  const { user, activeMode, notifications, refreshNotifications } = useAppStore();
   const isArtisanPending = activeMode === 'artisan' && user?.kycStatus !== 'approved';
-  
-  const [showNotifications, setShowNotifications] = useState(false);
+
+  const hasUnreadMessages = notifications.some(
+    n => !n.read && (
+      n.title.toLowerCase().includes('message') || 
+      n.body.toLowerCase().includes('message') || 
+      n.title.toLowerCase().includes('chat')
+    )
+  );
+
+  const hasUnreadOther = notifications.some(
+    n => !n.read && !(
+      n.title.toLowerCase().includes('message') || 
+      n.body.toLowerCase().includes('message') || 
+      n.title.toLowerCase().includes('chat')
+    )
+  );
 
   useEffect(() => {
     refreshNotifications();
@@ -90,52 +109,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex-1 flex flex-col bg-zinc-950 text-white relative min-h-full">
-      {/* Floating Notifications Button */}
-      <div className="fixed top-3.5 right-4 z-45 lg:absolute">
-        <button
-          onClick={() => {
-            setShowNotifications(!showNotifications);
-            mockDb.markNotificationsAsRead(user.id);
-            refreshNotifications();
-          }}
-          className="p-2.5 rounded-full glass border border-zinc-700 hover:bg-zinc-800/80 transition-colors relative cursor-pointer flex items-center justify-center bg-zinc-900/60 backdrop-blur-md text-white h-10 w-10 shadow-lg"
-          aria-label="Toggle notifications"
-        >
-          <NotificationBing size={18} color="currentColor" variant="Broken" className="text-zinc-200" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-zinc-950">
-              {unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
 
-      {/* Notifications Floating Panel */}
-      {showNotifications && (
-        <div className="absolute top-14 right-4 left-4 lg:right-6 lg:left-auto lg:w-80 z-50 glass rounded-2xl shadow-2xl p-4 border border-zinc-800 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-4">
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-bold text-sm text-white">Notifications</span>
-            <button onClick={() => setShowNotifications(false)} className="text-zinc-400 hover:text-white">
-              <CloseCircle size={16} color="currentColor" variant="Broken" />
-            </button>
-          </div>
-          <div className="flex flex-col gap-2">
-            {mockDb.getNotifications(user.id).length === 0 ? (
-              <span className="text-xs text-zinc-500 text-center py-4">No notifications</span>
-            ) : (
-              mockDb.getNotifications(user.id).map(notif => (
-                <div key={notif.id} className={`p-2.5 rounded-xl border ${notif.read ? 'border-zinc-800/40 bg-zinc-900/30' : 'border-brand-500/20 bg-brand-500/5'} text-left`}>
-                  <div className="font-semibold text-xs text-white mb-0.5">{notif.title}</div>
-                  <div className="text-[11px] text-zinc-400">{notif.body}</div>
-                  <div className="text-[9px] text-zinc-600 mt-1">
-                    {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col pt-10 pb-20 overflow-x-hidden animate-page-fade">
@@ -163,20 +137,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             onClick={() => handleNav('/messages')}
             icon={<MessageText size={18} color="currentColor" variant="Broken" />}
             label="Messages"
+            hasBadge={hasUnreadMessages}
           />
           <TabButton
             isActive={currentTab === 'me'}
             onClick={() => handleNav('/more')}
             icon={
-              <img 
-                src={user?.avatarUrl || "https://api.dicebear.com/7.x/adventurer/svg?seed=HustlePay"} 
-                className={`h-6 w-6 rounded-full object-cover transition-all ${
-                  currentTab === 'me' ? 'ring-1 ring-white' : 'opacity-70 hover:opacity-100'
-                }`} 
-                alt="Me" 
-              />
+              <div className="relative">
+                <img 
+                  src={user?.avatarUrl || "https://api.dicebear.com/7.x/adventurer/svg?seed=HustlePay"} 
+                  className={`h-6 w-6 rounded-full object-cover transition-all ${
+                    currentTab === 'me' ? 'ring-1 ring-white' : 'opacity-70 hover:opacity-100'
+                  }`} 
+                  alt="Me" 
+                />
+              </div>
             }
             label="Me"
+            hasBadge={hasUnreadOther}
           />
         </nav>
       )}
