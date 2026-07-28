@@ -11,10 +11,16 @@ export const Bookings: React.FC = () => {
 
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   
+  // Status filter state
+  const [filterTab, setFilterTab] = useState<'all' | 'requested' | 'active' | 'completed'>('all');
+
   // Final Price Proposal states
   const [showPriceForm, setShowPriceForm] = useState(false);
-  const [proposedPrice, setProposedPrice] = useState(15000);
   const [proposing, setProposing] = useState(false);
+
+  // Itemized Pricing proposal states
+  const [laborCharge, setLaborCharge] = useState(12000);
+  const [materialsCharge, setMaterialsCharge] = useState(3000);
 
   useEffect(() => {
     refreshBookings();
@@ -22,10 +28,18 @@ export const Bookings: React.FC = () => {
 
   if (!user) return null;
 
+  const filterBookings = (list: Booking[]) => {
+    if (filterTab === 'requested') return list.filter(b => b.status === 'requested');
+    if (filterTab === 'active') return list.filter(b => ['accepted', 'in_progress', 'price_proposed', 'price_accepted'].includes(b.status));
+    if (filterTab === 'completed') return list.filter(b => ['completed', 'seeker_confirmed'].includes(b.status));
+    return list;
+  };
+
   const handleOpenDetails = (bk: Booking) => {
     setSelectedBooking(bk);
     setShowPriceForm(false);
-    setProposedPrice(bk.estimatedAmount);
+    setLaborCharge(bk.estimatedAmount || 10000);
+    setMaterialsCharge(0);
   };
 
   const handleCloseDetails = () => {
@@ -52,9 +66,10 @@ export const Bookings: React.FC = () => {
 
   const handleProposePrice = () => {
     if (!selectedBooking) return;
+    const totalAmount = laborCharge + materialsCharge;
     setProposing(true);
     setTimeout(() => {
-      mockDb.updateBookingStatus(selectedBooking.id, 'price_proposed', { finalAmount: proposedPrice });
+      mockDb.updateBookingStatus(selectedBooking.id, 'price_proposed', { finalAmount: totalAmount });
       refreshBookings();
       setProposing(false);
       setShowPriceForm(false);
@@ -92,27 +107,72 @@ export const Bookings: React.FC = () => {
   const myBookings = bookings.filter(bk => 
     isArtisan ? bk.artisanId === user.id : bk.seekerId === user.id
   );
+  const displayedBookings = filterBookings(myBookings);
 
   return (
     <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-955 text-left animate-in fade-in pb-20">
       <h2 className="text-2xl font-extrabold text-white mb-2">
         {isArtisan ? 'Job Pipeline' : 'Your Bookings'}
       </h2>
-      <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
+      <p className="text-xs text-zinc-400 leading-relaxed mb-5 font-light">
         {isArtisan 
           ? 'Manage incoming booking offers, accept assessment tickets, and propose service fees.'
           : 'Monitor active call-outs, view estimated labor prices, and release smart escrow payouts.'
         }
       </p>
 
+      {/* Filter Tabs */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 py-1">
+        <button
+          onClick={() => setFilterTab('all')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border shrink-0 cursor-pointer ${
+            filterTab === 'all'
+              ? 'bg-brand-500 text-white border-brand-500'
+              : 'bg-zinc-900/60 text-zinc-400 border-zinc-850 hover:text-white'
+          }`}
+        >
+          All ({myBookings.length})
+        </button>
+        <button
+          onClick={() => setFilterTab('requested')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border shrink-0 cursor-pointer ${
+            filterTab === 'requested'
+              ? 'bg-brand-500 text-white border-brand-500'
+              : 'bg-zinc-900/60 text-zinc-400 border-zinc-850 hover:text-white'
+          }`}
+        >
+          Direct Requests ({myBookings.filter(b => b.status === 'requested').length})
+        </button>
+        <button
+          onClick={() => setFilterTab('active')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border shrink-0 cursor-pointer ${
+            filterTab === 'active'
+              ? 'bg-brand-500 text-white border-brand-500'
+              : 'bg-zinc-900/60 text-zinc-400 border-zinc-850 hover:text-white'
+          }`}
+        >
+          Active / In Progress ({myBookings.filter(b => ['accepted', 'in_progress', 'price_proposed', 'price_accepted'].includes(b.status)).length})
+        </button>
+        <button
+          onClick={() => setFilterTab('completed')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border shrink-0 cursor-pointer ${
+            filterTab === 'completed'
+              ? 'bg-brand-500 text-white border-brand-500'
+              : 'bg-zinc-900/60 text-zinc-400 border-zinc-850 hover:text-white'
+          }`}
+        >
+          Completed ({myBookings.filter(b => ['completed', 'seeker_confirmed'].includes(b.status)).length})
+        </button>
+      </div>
+
       {/* Bookings List */}
       <div className="flex flex-col gap-4">
-        {myBookings.length === 0 ? (
+        {displayedBookings.length === 0 ? (
           <div className="glass border border-zinc-900 rounded-[28px] p-8 text-center text-zinc-500 text-xs font-light">
-            No bookings found in this pipeline lifecycle.
+            No bookings found matching this filter tab.
           </div>
         ) : (
-          myBookings.map(bk => (
+          displayedBookings.map(bk => (
             <div 
               key={bk.id}
               className="glass border border-zinc-850 hover:border-zinc-750 transition-all rounded-[28px] p-4 cursor-pointer flex flex-col gap-3"
@@ -183,7 +243,7 @@ export const Bookings: React.FC = () => {
                         <span className="text-[10px] text-zinc-500 block truncate">{selectedBooking.address}</span>
                       </div>
                       <Button
-                        className="px-3.5 py-2 bg-transparent border border-zinc-800 hover:bg-zinc-900 rounded-xl text-xs font-bold text-brand-400 flex items-center gap-1.5 transition-all h-8"
+                        className="px-3.5 py-2 bg-transparent border border-zinc-800 hover:bg-zinc-900 rounded-xl text-xs font-bold text-brand-400 flex items-center gap-1.5 transition-all h-8 cursor-pointer"
                         onClick={() => {
                           handleCloseDetails();
                           navigate(`/chat/${selectedBooking.id}`);
@@ -220,13 +280,13 @@ export const Bookings: React.FC = () => {
                       {selectedBooking.status === 'requested' && (
                         <div className="flex gap-3">
                           <Button
-                            className="flex-1 h-11 border border-danger-500/20 text-danger hover:bg-danger-500/10 font-bold rounded-xl transition-all text-xs bg-transparent"
+                            className="flex-1 h-11 border border-danger-500/20 text-danger hover:bg-danger-500/10 font-bold rounded-xl transition-all text-xs bg-transparent cursor-pointer"
                             onClick={() => handleDecline(selectedBooking)}
                           >
                             Decline
                           </Button>
                           <Button
-                            className="flex-1 h-11 font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-xl transition-all text-xs"
+                            className="flex-1 h-11 font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-xl transition-all text-xs cursor-pointer"
                             onClick={() => handleAccept(selectedBooking)}
                           >
                             Accept Job
@@ -236,7 +296,7 @@ export const Bookings: React.FC = () => {
 
                       {selectedBooking.status === 'accepted' && (
                         <Button
-                          className="w-full font-bold bg-brand-500 hover:bg-brand-600 h-11 rounded-xl text-white transition-all text-xs"
+                          className="w-full font-bold bg-brand-500 hover:bg-brand-600 h-11 rounded-xl text-white transition-all text-xs cursor-pointer"
                           onClick={() => handleStart(selectedBooking)}
                         >
                           Start Job (Arrived On-Site)
@@ -247,7 +307,7 @@ export const Bookings: React.FC = () => {
                         <div className="flex flex-col gap-3 text-left">
                           {!showPriceForm ? (
                             <Button
-                              className="w-full font-bold bg-brand-500 hover:bg-brand-600 h-11 rounded-xl text-white transition-all text-xs"
+                              className="w-full font-bold bg-brand-500 hover:bg-brand-600 h-11 rounded-xl text-white transition-all text-xs cursor-pointer"
                               onClick={() => setShowPriceForm(true)}
                             >
                               Propose Final Service Fee
@@ -255,38 +315,62 @@ export const Bookings: React.FC = () => {
                           ) : (
                             <div className="glass border border-zinc-850 p-4 rounded-2xl flex flex-col gap-3">
                               <span className="text-xs font-bold text-white flex items-center gap-1">
-                                <Money size={14} color="currentColor" variant="Broken" className="text-brand-400" /> Propose Service Fee
+                                <Money size={14} color="currentColor" variant="Broken" className="text-brand-400" /> Propose Service Fee Breakdown
                               </span>
                               
-                              <TextField className="flex flex-col gap-1.5 w-full">
-                                <Label className="text-zinc-400 text-xs font-semibold">Final labor charge (₦)</Label>
-                                <div className="flex items-center gap-2.5 px-3.5 py-3 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 transition-colors h-11">
+                              <TextField className="flex flex-col gap-1 w-full">
+                                <Label className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Labor Charge (₦)</Label>
+                                <div className="flex items-center gap-2.5 px-3 py-2.5 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 transition-colors h-10">
                                   <Input
                                     type="number"
                                     className="w-full bg-transparent text-xs text-white focus:outline-none"
-                                    value={proposedPrice.toString()}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProposedPrice(parseInt(e.target.value) || 0)}
+                                    value={laborCharge.toString()}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLaborCharge(parseInt(e.target.value) || 0)}
+                                  />
+                                </div>
+                              </TextField>
+
+                              <TextField className="flex flex-col gap-1 w-full">
+                                <Label className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Materials & Parts (₦)</Label>
+                                <div className="flex items-center gap-2.5 px-3 py-2.5 border border-zinc-800 rounded-xl bg-zinc-900/50 focus-within:border-brand-500 transition-colors h-10">
+                                  <Input
+                                    type="number"
+                                    placeholder="0 if no extra materials used"
+                                    className="w-full bg-transparent text-xs text-white focus:outline-none"
+                                    value={materialsCharge.toString()}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaterialsCharge(parseInt(e.target.value) || 0)}
                                   />
                                 </div>
                               </TextField>
 
                               {/* Take home net preview (ART-14) */}
-                              <div className="flex justify-between items-center text-xs bg-zinc-900/80 p-2.5 rounded-lg font-bold">
-                                <span className="text-zinc-400">Take-home (95%):</span>
-                                <span className="font-bold text-brand-300">
-                                  ₦{Math.round(proposedPrice * 0.95).toLocaleString()}
-                                </span>
+                              <div className="flex flex-col gap-1 text-xs bg-zinc-900/80 p-3 rounded-xl border border-zinc-850">
+                                <div className="flex justify-between text-zinc-400 text-[11px]">
+                                  <span>Total Client Quote:</span>
+                                  <strong className="text-white">₦{(laborCharge + materialsCharge).toLocaleString()}</strong>
+                                </div>
+                                <div className="flex justify-between text-red-400 text-[11px]">
+                                  <span>Platform 5% Fee:</span>
+                                  <span>-₦{Math.round((laborCharge + materialsCharge) * 0.05).toLocaleString()}</span>
+                                </div>
+                                <div className="h-px bg-zinc-800 my-0.5"></div>
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-zinc-300 font-bold">You Take Home (95%):</span>
+                                  <span className="font-extrabold text-brand-300 text-sm">
+                                    ₦{Math.round((laborCharge + materialsCharge) * 0.95).toLocaleString()}
+                                  </span>
+                                </div>
                               </div>
 
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 mt-1">
                                 <Button
-                                  className="flex-1 h-9 font-semibold text-zinc-400 hover:text-white rounded-lg text-xs transition-colors bg-transparent"
+                                  className="flex-1 h-9 font-semibold text-zinc-400 hover:text-white rounded-lg text-xs transition-colors bg-transparent border border-zinc-800 cursor-pointer"
                                   onClick={() => setShowPriceForm(false)}
                                 >
                                   Cancel
                                 </Button>
                                 <Button
-                                  className="flex-1 h-9 font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs transition-all flex items-center justify-center gap-1.5"
+                                  className="flex-1 h-9 font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                                   onClick={handleProposePrice}
                                   isDisabled={proposing}
                                 >
@@ -310,7 +394,7 @@ export const Bookings: React.FC = () => {
 
                       {selectedBooking.status === 'price_accepted' && (
                         <Button
-                          className="w-full font-bold text-white bg-success-500 hover:bg-success-600 h-11 rounded-xl transition-all text-xs"
+                          className="w-full font-bold text-white bg-success-500 hover:bg-success-600 h-11 rounded-xl transition-all text-xs cursor-pointer"
                           onClick={() => handleMarkComplete(selectedBooking)}
                         >
                           Mark Job Completed
@@ -329,7 +413,7 @@ export const Bookings: React.FC = () => {
                   </ModalBody>
                   <ModalFooter>
                     <Button
-                      className="w-full border border-zinc-800 text-zinc-400 font-bold h-11 rounded-xl text-xs hover:bg-zinc-900 transition-colors bg-transparent"
+                      className="w-full border border-zinc-800 text-zinc-400 font-bold h-11 rounded-xl text-xs hover:bg-zinc-900 transition-colors bg-transparent cursor-pointer"
                       onClick={handleCloseDetails}
                     >
                       Close Details

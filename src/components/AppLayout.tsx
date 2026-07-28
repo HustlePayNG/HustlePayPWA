@@ -118,7 +118,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       {!isArtisanPending && (
         <nav
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit glass h-11 rounded-full flex flex-row items-center justify-center gap-0 shadow-2xl"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 lg:absolute w-fit glass h-11 rounded-full flex flex-row items-center justify-center gap-0 shadow-2xl transition-opacity duration-200"
         >
           <TabButton
             isActive={currentTab === 'home'}

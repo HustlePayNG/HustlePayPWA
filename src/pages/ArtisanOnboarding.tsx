@@ -310,54 +310,135 @@ export const ArtisanOnboarding: React.FC = () => {
               <Fieldset.Legend className="text-sm font-bold text-white flex items-center gap-2 mb-1">
                 <DocumentText size={18} color="currentColor" variant="Broken" className="text-brand-400" /> Step 2: KYC Verification
               </Fieldset.Legend>
-              <p className="text-xs text-zinc-400 -mt-2 mb-3 leading-relaxed font-light">
-                Upload scans of mandatory documents. Government files are processed securely under NDPR.
+              <p className="text-xs text-zinc-400 -mt-2 mb-4 leading-relaxed font-light">
+                Upload scans of mandatory documents. Files are stored securely with end-to-end encryption under NDPR regulations.
               </p>
 
               <Fieldset.Group className="flex flex-col gap-3.5 w-full">
-                <CustomCheckbox
-                  isSelected={kycDocs.govId}
-                  onChange={(checked) => setKycDocs(k => ({ ...k, govId: checked }))}
-                  className="flex-row-reverse items-center justify-between p-3.5 border border-zinc-200 rounded-2xl bg-zinc-50/30 max-w-full m-0 cursor-pointer text-left w-full"
-                >
-                  <div>
-                    <div className="font-bold text-xs text-zinc-900">Government ID</div>
-                    <div className="text-[10px] text-zinc-550">NIN, Voter's Card, or Passport</div>
+                {/* Government ID Upload Card */}
+                <div className={`p-4 border rounded-2xl transition-all ${kycDocs.govId ? 'border-brand-500/40 bg-brand-500/5' : 'border-zinc-800 bg-zinc-900/30'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-extrabold text-xs text-white block">Government Issued ID</span>
+                      <span className="text-[10px] text-zinc-400">NIN, Voter's Card, or International Passport</span>
+                    </div>
+                    {kycDocs.govId && (
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Uploaded
+                      </span>
+                    )}
                   </div>
-                </CustomCheckbox>
+                  <div className="flex items-center justify-between gap-3 mt-3">
+                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all">
+                      <span>{kycDocs.govId ? '✓ NIN_card_scan.pdf' : '📷 Choose ID File'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*,.pdf" 
+                        className="hidden" 
+                        onChange={() => {
+                          setKycDocs(k => ({ ...k, govId: true }));
+                          toast.success('Government ID attached!');
+                        }} 
+                      />
+                    </label>
+                    {kycDocs.govId && (
+                      <button
+                        type="button"
+                        onClick={() => setKycDocs(k => ({ ...k, govId: false }))}
+                        className="text-[10px] text-danger hover:underline font-bold"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                <CustomCheckbox
-                  isSelected={kycDocs.certificate}
-                  onChange={(checked) => setKycDocs(k => ({ ...k, certificate: checked }))}
-                  className="flex-row-reverse items-center justify-between p-3.5 border border-zinc-200 rounded-2xl bg-zinc-50/30 max-w-full m-0 cursor-pointer text-left w-full"
-                >
-                  <div>
-                    <div className="font-bold text-xs text-zinc-900">Professional Certificate</div>
-                    <div className="text-[10px] text-zinc-555">Trade test, training certificate</div>
+                {/* Trade Certificate Upload Card */}
+                <div className={`p-4 border rounded-2xl transition-all ${kycDocs.certificate ? 'border-brand-500/40 bg-brand-500/5' : 'border-zinc-800 bg-zinc-900/30'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-extrabold text-xs text-white block">Trade & Skill Certificate</span>
+                      <span className="text-[10px] text-zinc-400">Trade test certificate or apprenticeship completion</span>
+                    </div>
+                    {kycDocs.certificate && (
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Uploaded
+                      </span>
+                    )}
                   </div>
-                </CustomCheckbox>
+                  <div className="flex items-center justify-between gap-3 mt-3">
+                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all">
+                      <span>{kycDocs.certificate ? '✓ Trade_test_cert.jpg' : '📷 Choose Certificate File'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*,.pdf" 
+                        className="hidden" 
+                        onChange={() => {
+                          setKycDocs(k => ({ ...k, certificate: true }));
+                          toast.success('Certificate attached!');
+                        }} 
+                      />
+                    </label>
+                    {kycDocs.certificate && (
+                      <button
+                        type="button"
+                        onClick={() => setKycDocs(k => ({ ...k, certificate: false }))}
+                        className="text-[10px] text-danger hover:underline font-bold"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                <CustomCheckbox
-                  isSelected={kycDocs.photo}
-                  onChange={(checked) => setKycDocs(k => ({ ...k, photo: checked }))}
-                  className="flex-row-reverse items-center justify-between p-3.5 border border-zinc-200 rounded-2xl bg-zinc-50/30 max-w-full m-0 cursor-pointer text-left w-full"
-                >
-                  <div>
-                    <div className="font-bold text-xs text-zinc-900">Passport Photograph</div>
-                    <div className="text-[10px] text-zinc-555">Recent passport size photo</div>
+                {/* Passport Photo Upload Card */}
+                <div className={`p-4 border rounded-2xl transition-all ${kycDocs.photo ? 'border-brand-500/40 bg-brand-500/5' : 'border-zinc-800 bg-zinc-900/30'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-extrabold text-xs text-white block">Passport Photograph</span>
+                      <span className="text-[10px] text-zinc-400">Recent white-background clear headshot</span>
+                    </div>
+                    {kycDocs.photo && (
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Uploaded
+                      </span>
+                    )}
                   </div>
-                </CustomCheckbox>
+                  <div className="flex items-center justify-between gap-3 mt-3">
+                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all">
+                      <span>{kycDocs.photo ? '✓ Headshot_photo.png' : '📷 Choose Photo'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={() => {
+                          setKycDocs(k => ({ ...k, photo: true }));
+                          toast.success('Passport photo attached!');
+                        }} 
+                      />
+                    </label>
+                    {kycDocs.photo && (
+                      <button
+                        type="button"
+                        onClick={() => setKycDocs(k => ({ ...k, photo: false }))}
+                        className="text-[10px] text-danger hover:underline font-bold"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
               </Fieldset.Group>
 
-              <Fieldset.Actions className="flex gap-3 mt-5">
+              <Fieldset.Actions className="flex gap-3 mt-6">
                 <Button 
-                  className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all" 
+                  className="flex-1 h-11 border border-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-900 bg-transparent transition-all cursor-pointer text-xs" 
                   onClick={handlePrev}
                 >
                   Back
                 </Button>
                 <Button 
-                  className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all" 
+                  className="flex-1 h-11 font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all cursor-pointer text-xs shadow-lg shadow-brand-500/20" 
                   onClick={handleNext}
                   isDisabled={!kycDocs.govId || !kycDocs.certificate || !kycDocs.photo}
                 >
@@ -366,7 +447,9 @@ export const ArtisanOnboarding: React.FC = () => {
               </Fieldset.Actions>
             </Fieldset>
           </div>
-        )}        {/* STEP 3: AVAILABILITY SETUPS */}
+        )}
+
+        {/* STEP 3: AVAILABILITY SETUPS */}
         {step === 3 && (
           <div className="flex flex-col gap-4 animate-in fade-in">
             <Fieldset>

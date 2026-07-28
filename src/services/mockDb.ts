@@ -691,6 +691,20 @@ export const mockDb = {
     mockDb.createNotification(userId, 'Application Submitted', 'Your artisan application is currently pending admin review.');
   },
 
+  // Update existing artisan profile details
+  updateArtisanProfile: (
+    userId: string,
+    updates: Partial<Omit<ArtisanProfile, 'id'>>
+  ): ArtisanProfile | null => {
+    const artisans = getStorageItem<ArtisanProfile[]>('hp_artisans');
+    const idx = artisans.findIndex(a => a.id === userId);
+    if (idx === -1) return null;
+
+    artisans[idx] = { ...artisans[idx], ...updates };
+    setStorageItem('hp_artisans', artisans);
+    return artisans[idx];
+  },
+
   // Approve artisan via admin mockup panel
   adminApproveArtisan: (userId: string, approve: boolean, reason?: string): void => {
     const user = mockDb.getUserById(userId);
