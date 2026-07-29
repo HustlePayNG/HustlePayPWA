@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { mockDb, type User, type Booking, type Wallet, type Notification } from '../services/mockDb';
+import { supabase } from '../services/supabase';
 
 interface AppState {
   user: User | null;
@@ -8,6 +9,7 @@ interface AppState {
   wallet: Wallet | null;
   notifications: Notification[];
   unreadCount: number;
+  isLiveSupabase: boolean;
   
   // Actions
   login: (email: string, role: 'seeker' | 'artisan') => boolean;
@@ -19,6 +21,7 @@ interface AppState {
   refreshBookings: () => void;
   refreshNotifications: () => void;
   updateUserProfile: (updates: Partial<User>) => void;
+  syncSupabaseUserSession: (supabaseUser: any) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -40,6 +43,7 @@ export const useAppStore = create<AppState>((set, get) => {
     wallet: null,
     notifications: [],
     unreadCount: 0,
+    isLiveSupabase: !!import.meta.env.VITE_SUPABASE_URL,
 
     login: (email: string, role: 'seeker' | 'artisan') => {
       const user = mockDb.login(email, role);
@@ -74,8 +78,38 @@ export const useAppStore = create<AppState>((set, get) => {
       get().refreshNotifications();
     },
 
+    syncSupabaseUserSession: (supabaseUser: any) => {
+      if (!supabaseUser) return;
+      
+      sessionStorage.setItem('hp_session_user_id', supabaseUser.id);
+      let existing = mockDb.getUserById(supabaseUser.id);
+      
+      if (!existing) {
+        // Create user profile in mock DB matching Supabase user metadata
+        existing = mockDb.signup({
+          email: supabaseUser.email || 'user@hustlepay.com',
+          fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'HustlePay User',
+          phone: supabaseUser.phone || '08012345678',
+          avatarUrl: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${supabaseUser.id}`,
+          address: {
+            formattedAddress: 'Lagos, Nigeria',
+            latitude: 6.5244,
+            longitude: 3.3792
+          }
+        }, 'seeker');
+        // Set exact ID to match Supabase Auth UUID
+        existing.id = supabaseUser.id;
+      }
+
+      set({ user: existing, activeMode: existing.activeModePreference });
+      get().refreshWallet();
+      get().refreshBookings();
+      get().refreshNotifications();
+    },
+
     logout: () => {
       sessionStorage.removeItem('hp_session_user_id');
+      supabase.auth.signOut().catch(() => {});
       set({ user: null, activeMode: 'seeker', bookings: [], wallet: null, notifications: [], unreadCount: 0 });
     },
 

@@ -13,6 +13,7 @@ import InstallPWA from './components/InstallPWA';
 // Auth Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import AuthCallback from './pages/AuthCallback';
 import EmailVerification from './pages/EmailVerification';
 import PasswordReset from './pages/PasswordReset';
 
@@ -112,6 +113,7 @@ export const App: React.FC = () => {
             {/* Non-Layout Auth Pages */}
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/signup" element={<SignupRoute />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/password-reset" element={<PasswordReset />} />
 
