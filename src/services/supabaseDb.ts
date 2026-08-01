@@ -344,6 +344,55 @@ export const supabaseDb = {
 
     if (error) throw error;
     return data;
+  },
+
+  // ── 7. REALTIME MESSAGING ─────────────────────────────────────────
+  async sendMessage(bookingId: string, senderId: string, body: string, receiverId?: string) {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        booking_id: bookingId,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        body
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getMessages(bookingId: string) {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  subscribeToMessages(bookingId: string, onNewMessage: (msg: any) => void) {
+    const channel = supabase
+      .channel(`messages:${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `booking_id=eq.${bookingId}`
+        },
+        (payload) => {
+          onNewMessage(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 };
+
 

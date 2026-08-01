@@ -368,4 +368,39 @@ CREATE POLICY "Users create disputes for their bookings" ON public.disputes
 CREATE POLICY "Users update disputes they are party to" ON public.disputes
   FOR UPDATE USING (auth.uid() = complainant_id OR auth.uid() = respondent_id);
 
+-- ── 12. MESSAGES TABLE & REALTIME PUBLICATION ─────────────────────────
+CREATE TABLE IF NOT EXISTS public.messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  receiver_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_booking ON public.messages(booking_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver ON public.messages(receiver_id);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users read messages they are party to" ON public.messages
+  FOR SELECT USING (
+    auth.uid() = sender_id OR 
+    auth.uid() = receiver_id OR 
+    auth.uid() IN (
+      SELECT seeker_id FROM public.bookings WHERE id = booking_id
+      UNION
+      SELECT artisan_id FROM public.bookings WHERE id = booking_id
+    )
+  );
+
+CREATE POLICY "Users insert messages into their chats" ON public.messages
+  FOR INSERT WITH CHECK (auth.uid() = sender_id);
+
+-- Enable Supabase Realtime for instant messaging
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+
+
 
