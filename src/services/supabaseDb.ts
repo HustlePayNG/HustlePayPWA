@@ -279,5 +279,71 @@ export const supabaseDb = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  // ── 6. DISPUTES ───────────────────────────────────────────────────
+  async createDispute(disputeData: {
+    bookingId: string;
+    bookingRef: string;
+    complainantId: string;
+    respondentId: string;
+    reason: string;
+    description: string;
+    evidenceUrls?: string[];
+  }) {
+    const { data, error } = await supabase
+      .from('disputes')
+      .insert({
+        booking_id: disputeData.bookingId,
+        booking_ref: disputeData.bookingRef,
+        complainant_id: disputeData.complainantId,
+        respondent_id: disputeData.respondentId,
+        reason: disputeData.reason,
+        description: disputeData.description,
+        evidence_urls: disputeData.evidenceUrls || [],
+        status: 'open'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update booking status to disputed
+    await supabase
+      .from('bookings')
+      .update({ status: 'disputed', updated_at: new Date().toISOString() })
+      .eq('id', disputeData.bookingId);
+
+    return data;
+  },
+
+  async getDisputes(userId: string) {
+    const { data, error } = await supabase
+      .from('disputes')
+      .select('*')
+      .or(`complainant_id.eq.${userId},respondent_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async resolveDispute(disputeId: string, resolutionOutcome: string, refundAmount?: number) {
+    const { data, error } = await supabase
+      .from('disputes')
+      .update({
+        status: 'resolved',
+        resolution_outcome: resolutionOutcome,
+        refund_amount: refundAmount || 0,
+        resolved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', disputeId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 };
+

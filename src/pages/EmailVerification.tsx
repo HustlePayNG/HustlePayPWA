@@ -1,21 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { Sms, TickCircle } from 'iconsax-react';
-import { Button, Spinner, Fieldset } from '@heroui/react';
+import { Sms, TickCircle, Refresh, ArrowLeft, DirectInbox } from 'iconsax-react';
+import { Button, Spinner, toast } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
 import { liquidGlass } from '../components/liquidGlass';
+import { supabase } from '../services/supabase';
 
 export const EmailVerification: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAppStore();
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [verified, setVerified] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [codeError, setCodeError] = useState('');
-  const [timer, setTimer] = useState(60);
+  const location = useLocation();
+  const { user, syncSupabaseUserSession } = useAppStore();
+
+  const targetEmail = location.state?.email || user?.email || localStorage.getItem('hp_pending_email') || 'your email';
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const [verified, setVerified] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [timer, setTimer] = useState(60);
+
+  // Store pending email for persistence on page reload
+  useEffect(() => {
+    if (location.state?.email) {
+      localStorage.setItem('hp_pending_email', location.state.email);
+    }
+  }, [location.state?.email]);
+
+  // Initialize liquid glass background styling
   useEffect(() => {
     if (!cardRef.current) return;
     const instance = liquidGlass(cardRef.current, {
@@ -32,43 +43,71 @@ export const EmailVerification: React.FC = () => {
     };
   }, []);
 
+  // Resend countdown timer
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
     const interval = setInterval(() => {
-      setTimer(t => (t > 0 ? t - 1 : 0));
+      setTimer((t) => (t > 0 ? t - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, []);
 
-  const handleChange = (index: number, val: string) => {
-    if (isNaN(Number(val))) return;
-    const newCode = [...code];
-    newCode[index] = val;
-    setCode(newCode);
+  // Automatically detect when user verifies via Magic Link in email
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        syncSupabaseUserSession(session.user);
+        setVerified(true);
+        toast.success('Magic link verified successfully!');
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 1500);
+      }
+    });
 
-    // Focus next input
-    if (val !== '' && index < 5) {
-      const nextInput = document.getElementById(`digit-${index + 1}`);
-      nextInput?.focus();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, syncSupabaseUserSession]);
+
+  const handleResendMagicLink = async () => {
+    if (!targetEmail || targetEmail === 'your email') {
+      toast.danger('Email address not found. Please try signing up again.');
+      return;
+    }
+
+    setResending(true);
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: targetEmail,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+
+      if (error) {
+        // Fallback to magic link OTP flow if resend type signup fails
+        const { error: otpErr } = await supabase.auth.signInWithOtp({
+          email: targetEmail,
+          options: {
+            emailRedirectTo: redirectUrl
+          }
+        });
+        if (otpErr) throw otpErr;
+      }
+
+      toast.success('New magic link sent to your email!');
+      setTimer(60);
+    } catch (err: any) {
+      toast.danger(err.message || 'Failed to resend magic link');
+    } finally {
+      setResending(false);
     }
   };
 
-  const handleVerify = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setVerified(true);
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-    }, 1000);
-  };
-
-  const handleResend = () => {
-    setTimer(60);
+  const handleOpenMailApp = () => {
+    window.location.href = targetEmail.includes('@') ? `mailto:${targetEmail}` : 'mailto:';
   };
 
   return (
@@ -78,77 +117,82 @@ export const EmailVerification: React.FC = () => {
       <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md">
         {verified ? (
           <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-300">
-            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-success-500/10 text-success-500">
-              <TickCircle size={36} color="currentColor" variant="Broken" />
+            <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-success-500/10 text-success-500 border border-success-500/30">
+              <TickCircle size={44} color="currentColor" variant="Broken" />
             </div>
-            <h2 className="text-2xl font-medium text-zinc-900">Email Verified!</h2>
-            <p className="text-zinc-550 text-xs font-light">Redirecting you to dashboard...</p>
+            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Magic Link Verified!</h2>
+            <p className="text-zinc-550 text-xs font-light">Redirecting you to your HustlePay dashboard...</p>
           </div>
         ) : (
           <>
+            {/* Top Back Nav */}
+            <div className="flex justify-start mb-4">
+              <Button
+                onClick={() => navigate('/login')}
+                variant="outline"
+                className="h-10 px-4 border border-zinc-200 text-zinc-700 hover:bg-zinc-50 rounded-2xl flex items-center justify-center gap-1.5 bg-white/80 backdrop-blur-md cursor-pointer"
+                aria-label="Back to login"
+              >
+                <ArrowLeft size={16} color="currentColor" variant="Broken" />
+                <span className="text-xs font-semibold">Login</span>
+              </Button>
+            </div>
+
             <div className="flex justify-center mb-4">
-              <div className="inline-flex items-center justify-center h-16 w-16 rounded-3xl bg-brand-500/10 border border-brand-500/30 text-brand-500">
-                <Sms size={32} color="currentColor" variant="Broken" />
+              <div className="relative inline-flex items-center justify-center h-20 w-20 rounded-3xl bg-brand-500/10 border border-brand-500/30 text-brand-500 animate-pulse">
+                <Sms size={40} color="currentColor" variant="Broken" />
               </div>
             </div>
-            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Verify Your Email</h2>
-            <p className="mt-2 text-xs text-zinc-555 font-light">
-              We sent a verification code to <span className="text-brand-500 font-bold">{user?.email}</span>.
+
+            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Check Your Email</h2>
+            <p className="mt-2 text-xs text-zinc-555 font-light max-w-sm mx-auto">
+              We sent a sign-in magic link to{' '}
+              <span className="text-brand-500 font-bold break-all">{targetEmail}</span>
             </p>
 
-            <div ref={cardRef} className="liquid-glass-auth rounded-[32px] p-6 mt-8 relative overflow-hidden">
-              <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }}>
-                <Fieldset>
-                  <Fieldset.Legend className="sr-only">Enter Verification Code</Fieldset.Legend>
-                  
-                  <Fieldset.Group className="flex flex-col gap-2.5 items-center justify-center">
-                    <div className="flex gap-2.5 justify-center">
-                      {code.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          id={`digit-${idx}`}
-                          type="text"
-                          maxLength={1}
-                          value={digit}
-                          onChange={(e) => {
-                            handleChange(idx, e.target.value);
-                            if (codeError) setCodeError('');
-                          }}
-                          className={`w-11 h-14 bg-zinc-50/50 border focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-zinc-900 rounded-2xl text-center font-black text-lg focus:outline-none transition-all ${codeError ? 'border-danger focus:border-danger' : 'border-zinc-200'}`}
-                        />
-                      ))}
-                    </div>
-                    {codeError && (
-                      <span className="text-[10px] text-danger font-semibold text-center">{codeError}</span>
-                    )}
-                  </Fieldset.Group>
+            <div ref={cardRef} className="liquid-glass-auth rounded-[32px] p-6 mt-6 relative overflow-hidden text-left">
+              <div className="flex flex-col gap-4">
+                <div className="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 flex items-start gap-3">
+                  <DirectInbox size={22} className="text-brand-500 shrink-0 mt-0.5" color="currentColor" variant="Broken" />
+                  <div className="text-xs text-zinc-700">
+                    <p className="font-semibold text-zinc-900 mb-0.5">Click the link in your inbox</p>
+                    <p className="text-zinc-555 font-light text-[11px] leading-relaxed">
+                      Tap the secure link inside the email to instantly verify your account and sign in. No password or OTP typing required.
+                    </p>
+                  </div>
+                </div>
 
-                  <Fieldset.Actions className="flex flex-col gap-4 mt-6">
+                <Button
+                  onClick={handleOpenMailApp}
+                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white-force rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <DirectInbox size={18} color="currentColor" variant="Broken" />
+                  <span>Open Mail App</span>
+                </Button>
+
+                <div className="pt-2 border-t border-zinc-200/60 flex flex-col items-center gap-3">
+                  <span className="text-[11px] text-zinc-500">Didn't receive the email? Check spam folder or</span>
+
+                  {timer > 0 ? (
+                    <span className="text-xs font-semibold text-zinc-500">
+                      Resend link in <span className="text-brand-500 font-bold">{timer}s</span>
+                    </span>
+                  ) : (
                     <Button
-                      type="submit"
-                      className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white-force rounded-2xl transition-all flex items-center justify-center gap-2"
-                      isDisabled={loading || code.some(d => d === '')}
+                      onClick={handleResendMagicLink}
+                      isDisabled={resending}
+                      className="text-xs font-bold text-brand-500 hover:text-brand-600 bg-brand-500/10 hover:bg-brand-500/20 px-4 h-9 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                     >
-                      {loading && <Spinner size="sm" />}
-                      Verify Code
-                    </Button>
-
-                    <div className="text-xs text-zinc-500 text-center">
-                      Didn't receive code?{' '}
-                      {timer > 0 ? (
-                        <span className="font-semibold text-zinc-700">Resend in {timer}s</span>
+                      {resending ? (
+                        <Spinner size="sm" />
                       ) : (
-                        <Button 
-                          onClick={handleResend} 
-                          className="text-brand-500 hover:text-brand-600 font-bold hover:underline p-0 h-auto min-w-0 bg-transparent inline"
-                        >
-                          Resend Now
-                        </Button>
+                        <Refresh size={14} color="currentColor" variant="Broken" />
                       )}
-                    </div>
-                  </Fieldset.Actions>
-                </Fieldset>
-              </form>
+                      <span>Resend Magic Link</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </>
         )}

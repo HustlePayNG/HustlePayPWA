@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { User, Call, Location, ShieldSecurity, ArrowLeft } from 'iconsax-react';
+import { User, Call, Location, ShieldSecurity, ArrowLeft, Camera } from 'iconsax-react';
 import { TextField, Label, Input, Button, Spinner, Fieldset, toast } from '@heroui/react';
+import { uploadAvatar } from '../services/supabase';
 
 import CustomCheckbox from '../components/CustomCheckbox';
 
@@ -13,6 +14,8 @@ export const Settings: React.FC = () => {
   const [name, setName] = useState(user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState(user?.address?.formattedAddress || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // NDPR compliance toggles (GEN-7)
   const [marketingConsent, setMarketingConsent] = useState(user?.kycStatus ? false : true);
@@ -23,6 +26,25 @@ export const Settings: React.FC = () => {
   const [addressError, setAddressError] = useState('');
 
   if (!user) return null;
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const res = await uploadAvatar(user.id, file);
+      setAvatarUrl(res.publicUrl);
+      updateUserProfile({ avatarUrl: res.publicUrl });
+      toast.success('Avatar updated successfully!');
+    } catch (err: any) {
+      const localUrl = URL.createObjectURL(file);
+      setAvatarUrl(localUrl);
+      updateUserProfile({ avatarUrl: localUrl });
+      toast.success('Avatar updated locally!');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +78,7 @@ export const Settings: React.FC = () => {
       updateUserProfile({
         fullName: name,
         phone,
+        avatarUrl,
         address: {
           formattedAddress: address,
           latitude: user.address?.latitude || 6.5244,
@@ -64,7 +87,7 @@ export const Settings: React.FC = () => {
       });
       setSaving(false);
       toast.success('Profile updated successfully!');
-    }, 1200);
+    }, 800);
   };
 
   return (
@@ -81,6 +104,36 @@ export const Settings: React.FC = () => {
       <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-light">
         Edit your public profile contact information, billing coordinates, and privacy compliance preferences.
       </p>
+
+      {/* Avatar Photo Upload Card */}
+      <div className="glass border border-zinc-850 rounded-[28px] p-5 mb-4 flex items-center gap-4">
+        <div className="relative">
+          <img
+            src={avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.fullName}`}
+            className="h-16 w-16 rounded-full object-cover border-2 border-brand-500/40 bg-zinc-900"
+            alt={user.fullName}
+          />
+          <label className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-90">
+            {uploadingAvatar ? (
+              <Spinner size="sm" />
+            ) : (
+              <Camera size={14} color="currentColor" variant="Broken" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploadingAvatar}
+              onChange={handleAvatarChange}
+            />
+          </label>
+        </div>
+        <div>
+          <h3 className="font-extrabold text-sm text-white">{user.fullName}</h3>
+          <p className="text-xs text-zinc-400 font-light">{user.email}</p>
+          <span className="text-[10px] text-brand-400 font-bold mt-1 inline-block">Tap camera icon to change photo</span>
+        </div>
+      </div>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">
         <Fieldset className="glass border border-zinc-850 rounded-[28px] p-5 flex flex-col gap-4">

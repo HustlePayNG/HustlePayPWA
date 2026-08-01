@@ -1,3 +1,22 @@
+# Environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# Build and dev outputs
+dist
+dist-ssr
+dev-dist
+build
+
+# Dependencies & caches
+node_modules
+.vite
+.cache
+.npm
+.pnpm-store
+
 # Logs
 logs
 *.log
@@ -7,18 +26,26 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Archives & Temporary files
+*.zip
+*.tar.gz
+*.rar
+*.7z
 
-# Editor directories and files
+# OS and Editor files
+.DS_Store
+Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+
+# Agent & AI CLI directories
+.gemini/
+.claude/
+

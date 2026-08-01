@@ -94,10 +94,12 @@ export const Signup: React.FC = () => {
     setLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       const { data, error: signUpErr } = await supabase.auth.signUp({
         email,
         password: password || 'HustlePay2026!',
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: name,
             phone_number: phone,
@@ -111,18 +113,17 @@ export const Signup: React.FC = () => {
 
       if (data.user) {
         useAppStore.getState().syncSupabaseUserSession(data.user);
-        setLoading(false);
-        navigate('/verify-email');
       } else {
         signup(name, email, phone, address, role);
-        setLoading(false);
-        navigate('/verify-email');
       }
+      setLoading(false);
+      navigate('/verify-email', { state: { email, name } });
     } catch (err: any) {
+      console.warn('Supabase Signup Warning/Fallback:', err);
       // Direct store fallback
       signup(name, email, phone, address, role);
       setLoading(false);
-      navigate('/verify-email');
+      navigate('/verify-email', { state: { email, name } });
     }
   };
 

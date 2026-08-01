@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { mockDb } from '../services/mockDb';
+import { supabaseDb } from '../services/supabaseDb';
+import { uploadKycDocument } from '../services/supabase';
 import { 
   Briefcase, DocumentText, Calendar, Clock, Money, 
   Send2, Danger
@@ -8,7 +10,7 @@ import {
 import { 
   TextField, Label, Input, TextArea, 
   Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem,
-  Button, RadioGroup, Radio, toast, Fieldset
+  Button, RadioGroup, Radio, toast, Fieldset, Spinner
 } from '@heroui/react';
 import CustomCheckbox from '../components/CustomCheckbox';
 
@@ -25,12 +27,24 @@ export const ArtisanOnboarding: React.FC = () => {
   const [bioError, setBioError] = useState('');
   const [experienceError, setExperienceError] = useState('');
 
-  // Step 2: KYC
-  const [kycDocs, setKycDocs] = useState({
+  // Step 2: KYC & Storage
+  const [kycDocs, setKycDocs] = useState<{
+    govId: boolean;
+    certificate: boolean;
+    photo: boolean;
+    govIdUrl?: string;
+    certificateUrl?: string;
+    photoUrl?: string;
+  }>({
     govId: false,
     certificate: false,
     photo: false
   });
+
+  const [uploadingGovId, setUploadingGovId] = useState(false);
+  const [uploadingCert, setUploadingCert] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
 
   // Step 3: Availability
   const [availability, setAvailability] = useState([
@@ -91,13 +105,32 @@ export const ArtisanOnboarding: React.FC = () => {
     setStep(s => s - 1);
   };
 
-  const handleSubmitOnboarding = () => {
+  const handleSubmitOnboarding = async () => {
     const categories = mockDb.getServiceCategories();
     const activeCat = categories.find(c => c.id === selectedCategory) || categories[0];
     
     const mockServices = [
       { name: `${activeCat.name} Standard Service`, description: `General maintenance and diagnostic fixes.`, price: baseRate }
     ];
+
+    try {
+      await supabaseDb.becomeArtisan({
+        businessName: businessName || `${user.fullName}'s Professional Service`,
+        categoryId: selectedCategory,
+        bio,
+        yearsExperience: parseInt(experience) || 1,
+        baseRate,
+        calloutFee,
+        rateType,
+        kycDocuments: {
+          government_id: kycDocs.govIdUrl || '',
+          skill_certificate: kycDocs.certificateUrl || '',
+          passport_photo: kycDocs.photoUrl || ''
+        }
+      });
+    } catch (err) {
+      console.warn('Supabase becomeArtisan Fallback:', err);
+    }
 
     mockDb.setupArtisanProfile(
       user.id,
@@ -329,23 +362,39 @@ export const ArtisanOnboarding: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-3 mt-3">
-                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all">
-                      <span>{kycDocs.govId ? '✓ NIN_card_scan.pdf' : '📷 Choose ID File'}</span>
+                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all flex items-center justify-center gap-2">
+                      {uploadingGovId ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <span>{kycDocs.govId ? '✓ ID Document Uploaded' : '📷 Choose ID File'}</span>
+                      )}
                       <input 
                         type="file" 
                         accept="image/*,.pdf" 
                         className="hidden" 
-                        onChange={() => {
-                          setKycDocs(k => ({ ...k, govId: true }));
-                          toast.success('Government ID attached!');
+                        disabled={uploadingGovId}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingGovId(true);
+                          try {
+                            const res = await uploadKycDocument(user.id, 'government_id', file);
+                            setKycDocs(k => ({ ...k, govId: true, govIdUrl: res.publicUrl }));
+                            toast.success('Government ID uploaded to storage!');
+                          } catch (err) {
+                            setKycDocs(k => ({ ...k, govId: true, govIdUrl: URL.createObjectURL(file) }));
+                            toast.success('Government ID attached!');
+                          } finally {
+                            setUploadingGovId(false);
+                          }
                         }} 
                       />
                     </label>
                     {kycDocs.govId && (
                       <button
                         type="button"
-                        onClick={() => setKycDocs(k => ({ ...k, govId: false }))}
-                        className="text-[10px] text-danger hover:underline font-bold"
+                        onClick={() => setKycDocs(k => ({ ...k, govId: false, govIdUrl: undefined }))}
+                        className="text-[10px] text-danger hover:underline font-bold cursor-pointer"
                       >
                         Remove
                       </button>
@@ -367,23 +416,39 @@ export const ArtisanOnboarding: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-3 mt-3">
-                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all">
-                      <span>{kycDocs.certificate ? '✓ Trade_test_cert.jpg' : '📷 Choose Certificate File'}</span>
+                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all flex items-center justify-center gap-2">
+                      {uploadingCert ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <span>{kycDocs.certificate ? '✓ Certificate Uploaded' : '📷 Choose Certificate File'}</span>
+                      )}
                       <input 
                         type="file" 
                         accept="image/*,.pdf" 
                         className="hidden" 
-                        onChange={() => {
-                          setKycDocs(k => ({ ...k, certificate: true }));
-                          toast.success('Certificate attached!');
+                        disabled={uploadingCert}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingCert(true);
+                          try {
+                            const res = await uploadKycDocument(user.id, 'skill_certificate', file);
+                            setKycDocs(k => ({ ...k, certificate: true, certificateUrl: res.publicUrl }));
+                            toast.success('Certificate uploaded to storage!');
+                          } catch (err) {
+                            setKycDocs(k => ({ ...k, certificate: true, certificateUrl: URL.createObjectURL(file) }));
+                            toast.success('Certificate attached!');
+                          } finally {
+                            setUploadingCert(false);
+                          }
                         }} 
                       />
                     </label>
                     {kycDocs.certificate && (
                       <button
                         type="button"
-                        onClick={() => setKycDocs(k => ({ ...k, certificate: false }))}
-                        className="text-[10px] text-danger hover:underline font-bold"
+                        onClick={() => setKycDocs(k => ({ ...k, certificate: false, certificateUrl: undefined }))}
+                        className="text-[10px] text-danger hover:underline font-bold cursor-pointer"
                       >
                         Remove
                       </button>
@@ -405,23 +470,39 @@ export const ArtisanOnboarding: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-3 mt-3">
-                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all">
-                      <span>{kycDocs.photo ? '✓ Headshot_photo.png' : '📷 Choose Photo'}</span>
+                    <label className="flex-1 cursor-pointer bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl px-3 py-2 text-center text-xs text-zinc-300 font-semibold transition-all flex items-center justify-center gap-2">
+                      {uploadingPhoto ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <span>{kycDocs.photo ? '✓ Passport Photo Uploaded' : '📷 Choose Photo'}</span>
+                      )}
                       <input 
                         type="file" 
                         accept="image/*" 
                         className="hidden" 
-                        onChange={() => {
-                          setKycDocs(k => ({ ...k, photo: true }));
-                          toast.success('Passport photo attached!');
+                        disabled={uploadingPhoto}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingPhoto(true);
+                          try {
+                            const res = await uploadKycDocument(user.id, 'passport_photo', file);
+                            setKycDocs(k => ({ ...k, photo: true, photoUrl: res.publicUrl }));
+                            toast.success('Passport photo uploaded to storage!');
+                          } catch (err) {
+                            setKycDocs(k => ({ ...k, photo: true, photoUrl: URL.createObjectURL(file) }));
+                            toast.success('Passport photo attached!');
+                          } finally {
+                            setUploadingPhoto(false);
+                          }
                         }} 
                       />
                     </label>
                     {kycDocs.photo && (
                       <button
                         type="button"
-                        onClick={() => setKycDocs(k => ({ ...k, photo: false }))}
-                        className="text-[10px] text-danger hover:underline font-bold"
+                        onClick={() => setKycDocs(k => ({ ...k, photo: false, photoUrl: undefined }))}
+                        className="text-[10px] text-danger hover:underline font-bold cursor-pointer"
                       >
                         Remove
                       </button>

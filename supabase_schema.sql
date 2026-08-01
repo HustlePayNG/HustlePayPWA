@@ -299,3 +299,73 @@ BEGIN
     AND ST_DWithin(location, ST_SetSRID(ST_MakePoint(long, lat), 4326), radius_meters);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ── 10. STORAGE BUCKETS & RLS POLICIES ────────────────────────────────
+INSERT INTO storage.buckets (id, name, public)
+VALUES 
+  ('kyc-documents', 'kyc-documents', false),
+  ('post-media', 'post-media', true),
+  ('avatars', 'avatars', true),
+  ('dispute-evidence', 'dispute-evidence', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Public read access for post media, avatars, and dispute evidence
+CREATE POLICY "Public Read Access for Post Media" ON storage.objects
+  FOR SELECT USING (bucket_id = 'post-media');
+
+CREATE POLICY "Public Read Access for Avatars" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "Public Read Access for Dispute Evidence" ON storage.objects
+  FOR SELECT USING (bucket_id = 'dispute-evidence');
+
+-- Upload policies for authenticated users
+CREATE POLICY "Authenticated Users Upload Post Media" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'post-media' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated Users Upload Avatars" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated Users Upload Dispute Evidence" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'dispute-evidence' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated Users Upload KYC Documents" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'kyc-documents' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Users Read Own KYC Documents" ON storage.objects
+  FOR SELECT USING (bucket_id = 'kyc-documents' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── 11. DISPUTES TABLE & POLICIES ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.disputes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  booking_id UUID NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
+  booking_ref TEXT NOT NULL,
+  complainant_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  respondent_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL,
+  description TEXT NOT NULL,
+  evidence_urls JSONB DEFAULT '[]'::jsonb,
+  status TEXT NOT NULL DEFAULT 'open',
+  resolution_outcome TEXT,
+  refund_amount NUMERIC(12,2),
+  resolved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_disputes_complainant ON public.disputes(complainant_id);
+CREATE INDEX IF NOT EXISTS idx_disputes_respondent ON public.disputes(respondent_id);
+CREATE INDEX IF NOT EXISTS idx_disputes_booking ON public.disputes(booking_id);
+
+ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users view disputes they are party to" ON public.disputes
+  FOR SELECT USING (auth.uid() = complainant_id OR auth.uid() = respondent_id);
+
+CREATE POLICY "Users create disputes for their bookings" ON public.disputes
+  FOR INSERT WITH CHECK (auth.uid() = complainant_id);
+
+CREATE POLICY "Users update disputes they are party to" ON public.disputes
+  FOR UPDATE USING (auth.uid() = complainant_id OR auth.uid() = respondent_id);
+
+

@@ -132,6 +132,7 @@ export interface Dispute {
   openedByUserId: string;
   reason: string;
   description: string;
+  evidenceUrls?: string[];
   status: 'open' | 'under_review' | 'resolved';
   resolution?: string;
   createdAt: string;
@@ -1013,6 +1014,7 @@ export const mockDb = {
       openedByUserId,
       reason,
       description,
+      evidenceUrls: _photos,
       status: 'open',
       createdAt: new Date().toISOString()
     };
