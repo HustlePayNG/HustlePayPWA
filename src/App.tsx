@@ -51,10 +51,16 @@ import { UserDirectory } from './admin/pages/UserDirectory';
 import { MarketplaceMonitor } from './admin/pages/MarketplaceMonitor';
 import { ContentModeration } from './admin/pages/ContentModeration';
 
+import { supabase } from './services/supabase';
+
 // Route Guard
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAppStore();
+  const { user, isAuthInitializing } = useAppStore();
   const introSeen = localStorage.getItem('hp_intro_seen') === 'true';
+
+  if (isAuthInitializing) {
+    return <AppSplash />;
+  }
   
   if (!user) {
     if (!introSeen) {
@@ -92,14 +98,44 @@ const HomeRedirect = () => {
 };
 
 export const App: React.FC = () => {
+  const { syncSupabaseUserSession, setAuthInitializing } = useAppStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Session restoration check & listener
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          syncSupabaseUserSession(session.user);
+        } else {
+          setAuthInitializing(false);
+        }
+      } catch (err) {
+        console.error('Session initialization error:', err);
+        setAuthInitializing(false);
+      }
+    };
+
+    initAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        syncSupabaseUserSession(session.user);
+      } else if (_event === 'SIGNED_OUT') {
+        setAuthInitializing(false);
+      }
+    });
+
     const timer = setTimeout(() => {
       setLoading(false);
     }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+
+    return () => {
+      clearTimeout(timer);
+      authListener.subscription.unsubscribe();
+    };
+  }, [syncSupabaseUserSession, setAuthInitializing]);
 
   if (loading) {
     return (

@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { SecuritySafe, Lock, Sms, Eye, EyeSlash, ShieldSecurity } from 'iconsax-react';
+import { Lock, Sms, Eye, EyeSlash, ShieldSecurity } from 'iconsax-react';
 import { Button, Spinner, toast } from '@heroui/react';
 import { useAppStore } from '../../store';
+import { supabase } from '../../services/supabase';
 
 interface AdminLoginGateProps {
   onSuccess: () => void;
 }
 
 export const AdminLoginGate: React.FC<AdminLoginGateProps> = ({ onSuccess }) => {
-  const { login } = useAppStore();
   const [email, setEmail] = useState('admin@hustlepay.com');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleAdminAuth = (e: React.FormEvent) => {
+  const handleAdminAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
       toast.danger('Please enter admin credentials.');
@@ -23,26 +23,30 @@ export const AdminLoginGate: React.FC<AdminLoginGateProps> = ({ onSuccess }) => 
 
     setLoading(true);
 
-    setTimeout(() => {
-      // Check seeded admin credentials
-      if (
-        (email.toLowerCase() === 'admin@hustlepay.com' && password === 'HustlePayAdmin2026!') ||
-        email.toLowerCase().includes('admin')
-      ) {
-        login(email, 'seeker');
-        sessionStorage.setItem('hp_admin_auth', 'true');
-        toast.success('Admin Security Clearance Verified!', {
-          description: 'Welcome to HustlePay Operations Portal.'
-        });
-        setLoading(false);
-        onSuccess();
-      } else {
-        setLoading(false);
-        toast.danger('Invalid Admin Security Clearance', {
-          description: 'Access denied. Incorrect email or secret security key.'
-        });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      if (data?.user) {
+        await useAppStore.getState().syncSupabaseUserSession(data.user);
       }
-    }, 600);
+
+      sessionStorage.setItem('hp_admin_auth', 'true');
+      toast.success('Admin Security Clearance Verified!', {
+        description: 'Welcome to HustlePay Operations Portal.'
+      });
+      setLoading(false);
+      onSuccess();
+    } catch (err: any) {
+      setLoading(false);
+      toast.danger('Invalid Admin Security Clearance', {
+        description: err.message || 'Access denied. Incorrect email or secret security key.'
+      });
+    }
   };
 
   return (

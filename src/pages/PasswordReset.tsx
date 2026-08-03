@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sms, Danger, Key, TickCircle } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, Fieldset } from '@heroui/react';
+import { TextField, Label, Fieldset, Button, Spinner, toast } from '@heroui/react';
 import BackgroundVideo from '../components/BackgroundVideo';
 import { liquidGlass } from '../components/liquidGlass';
+import { supabase } from '../services/supabase';
 
 export const PasswordReset: React.FC = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export const PasswordReset: React.FC = () => {
     };
   }, []);
 
-  const handleRequestCode = (e: React.FormEvent) => {
+  const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       setEmailError('Email address is required.');
@@ -43,13 +44,25 @@ export const PasswordReset: React.FC = () => {
     }
     setEmailError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const redirectUrl = `${window.location.origin}/password-reset`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Password reset email sent!');
       setStep(2);
-    }, 1000);
+    } catch (err: any) {
+      toast.danger(err.message || 'Failed to send reset code.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyCode = (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code) {
       setCodeError('Please enter the verification code.');
@@ -57,13 +70,26 @@ export const PasswordReset: React.FC = () => {
     }
     setCodeError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code.trim(),
+        type: 'recovery'
+      });
+
+      if (error) throw error;
+
+      toast.success('Code verified!');
       setStep(3);
-    }, 1000);
+    } catch (err: any) {
+      setCodeError(err.message || 'Invalid or expired code.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSetPassword = (e: React.FormEvent) => {
+  const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     let hasError = false;
 
@@ -83,10 +109,21 @@ export const PasswordReset: React.FC = () => {
 
     if (hasError) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast.success('Password updated successfully!');
       setStep(4);
-    }, 1000);
+    } catch (err: any) {
+      toast.danger(err.message || 'Failed to update password.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

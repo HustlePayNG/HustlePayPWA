@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Booking, ArtisanProfile } from './mockDb';
+import type { Booking, ArtisanProfile, User, Wallet, Notification, Message, Dispute } from '../types';
 
 export const supabaseDb = {
   // ── 1. PROFILES ──────────────────────────────────────────────────
@@ -134,6 +134,10 @@ export const supabaseDb = {
     return data;
   },
 
+  async debitWallet(userId: string, amount: number, description: string, reference?: string) {
+    return this.deductWallet(userId, amount, description, reference);
+  },
+
   async getTransactions(userId: string) {
     const { data, error } = await supabase
       .from('transactions')
@@ -149,11 +153,12 @@ export const supabaseDb = {
     seekerId: string;
     artisanId: string;
     serviceName: string;
-    categoryId: string;
+    categoryId?: string;
     calloutFee: number;
     estimatedAmount: number;
     address: string;
     description?: string;
+    photos?: string[];
   }) {
     const ref = `HP-BK-${Math.floor(100000 + Math.random() * 900000)}`;
     const { data, error } = await supabase

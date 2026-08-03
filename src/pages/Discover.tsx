@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockDb, type ArtisanPost } from '../services/mockDb';
+import type { ArtisanPost } from '../types';
+import { supabase } from '../services/supabase';
 import { useAppStore } from '../store';
 import { 
   Heart, MessageText, Send2, SearchNormal1, CloseCircle, 
@@ -279,7 +280,10 @@ export const Discover: React.FC = () => {
   const [commentPost, setCommentPost] = useState<ArtisanPost | null>(null);
 
   useEffect(() => {
-    setPosts(mockDb.getAllPosts());
+    supabase.from('posts').select('*').then(
+      ({ data }) => { if (data) setPosts(data as any); },
+      () => {}
+    );
   }, []);
 
   const hashtags = [
@@ -306,14 +310,12 @@ export const Discover: React.FC = () => {
   });
 
   const handleLike = (postId: string) => {
-    setPosts(mockDb.likePost(postId));
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likesCount: p.likesCount + 1 } : p));
   };
 
   const handleAddComment = (postId: string, body: string) => {
     if (!user) return;
-    const updated = mockDb.addComment(postId, user.id, user.fullName, user.avatarUrl || 'https://api.dicebear.com/7.x/adventurer/svg?seed=User', body);
-    setPosts(updated);
-    setCommentPost(updated.find(p => p.id === postId) || null);
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, commentsCount: p.commentsCount + 1 } : p));
   };
 
   // Unique artisans for stories row

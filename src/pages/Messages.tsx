@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Booking } from '../services/mockDb';
+import type { Booking } from '../types';
 import { supabaseDb } from '../services/supabaseDb';
 import { MessageText, ArrowRight2, SearchNormal1, CloseCircle, SecuritySafe } from 'iconsax-react';
 import { Spinner } from '@heroui/react';
@@ -16,10 +16,7 @@ export const Messages: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      // Clear message notifications
-      mockDb.markNotificationsByKeywordsAsRead(user.id, ['message', 'chat']);
       refreshNotifications();
-
       loadThreads();
     }
   }, [user, activeMode, refreshNotifications]);
@@ -29,33 +26,26 @@ export const Messages: React.FC = () => {
     setLoading(true);
 
     try {
+      let bookingsToUse: Booking[] = [];
       const isArtisan = activeMode === 'artisan';
       const supaBookings = await supabaseDb.getBookings(user.id, isArtisan);
       
-      let bookingsToUse: Booking[] = [];
-      if (supaBookings && supaBookings.length > 0) {
-        bookingsToUse = supaBookings.map(b => ({
+      if (supaBookings) {
+        bookingsToUse = supaBookings.map((b: any) => ({
           id: b.id,
-          reference: b.reference,
           seekerId: b.seeker_id,
           artisanId: b.artisan_id,
-          artisanName: b.service_name,
-          artisanAvatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Artisan',
-          seekerName: 'Client',
-          seekerPhone: '',
-          serviceName: b.service_name,
-          description: b.description || '',
-          photos: [],
-          scheduledStartAt: b.created_at,
-          address: b.address || '',
-          calloutFee: b.callout_fee,
-          estimatedAmount: b.estimated_amount,
+          seekerName: b.seeker_name || 'Seeker',
+          artisanName: b.artisan_name || 'Artisan',
+          artisanCategory: b.artisan_category || 'Service',
+          serviceDescription: b.service_name || b.service_description || 'Service',
+          address: b.address || { formattedAddress: 'Lagos', latitude: 6.5, longitude: 3.3 },
+          scheduledDate: b.scheduled_date || '',
+          scheduledTime: b.scheduled_time || '',
+          calloutFeePaid: b.callout_fee || 0,
           status: b.status as Booking['status'],
-          createdAt: b.created_at,
-          updatedAt: b.updated_at || b.created_at
+          createdAt: b.created_at
         }));
-      } else {
-        bookingsToUse = mockDb.getBookings(user.id, activeMode);
       }
 
       // Fetch last message for each thread
@@ -68,23 +58,11 @@ export const Messages: React.FC = () => {
             const msgs = await supabaseDb.getMessages(bk.id);
             if (msgs && msgs.length > 0) {
               const last = msgs[msgs.length - 1];
-              lastMsg = last.body;
+              lastMsg = last.body || (last as any).text || 'Attachment/Message';
               lastTime = last.created_at;
-            } else {
-              const localMsgs = mockDb.getMessages(bk.id);
-              if (localMsgs.length > 0) {
-                const last = localMsgs[localMsgs.length - 1];
-                lastMsg = last.body;
-                lastTime = last.createdAt;
-              }
             }
           } catch (err) {
-            const localMsgs = mockDb.getMessages(bk.id);
-            if (localMsgs.length > 0) {
-              const last = localMsgs[localMsgs.length - 1];
-              lastMsg = last.body;
-              lastTime = last.createdAt;
-            }
+            console.warn('Get messages note:', err);
           }
 
           return { booking: bk, lastMsg, lastTime };
@@ -95,15 +73,7 @@ export const Messages: React.FC = () => {
       threadsWithLastMsg.sort((a, b) => new Date(b.lastTime).getTime() - new Date(a.lastTime).getTime());
       setChatThreads(threadsWithLastMsg);
     } catch (err) {
-      const list = mockDb.getBookings(user.id, activeMode);
-      const mapped = list.map(bk => {
-        const msgs = mockDb.getMessages(bk.id);
-        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1].body : 'Tap to open chat thread';
-        const lastTime = msgs.length > 0 ? msgs[msgs.length - 1].createdAt : bk.createdAt;
-        return { booking: bk, lastMsg, lastTime };
-      });
-      mapped.sort((a, b) => new Date(b.lastTime).getTime() - new Date(a.lastTime).getTime());
-      setChatThreads(mapped);
+      console.error('loadThreads error:', err);
     } finally {
       setLoading(false);
     }

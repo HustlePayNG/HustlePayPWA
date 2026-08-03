@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Booking, type ArtisanProfile } from '../services/mockDb';
+import type { Booking, ArtisanProfile } from '../types';
+import { supabase } from '../services/supabase';
+import { supabaseDb } from '../services/supabaseDb';
 import { 
   Calendar, Star, Money, ArrowRight, TrendUp, Award,
   Edit2, Eye, Danger, SearchNormal1
@@ -18,30 +20,37 @@ export const ArtisanDashboard: React.FC = () => {
   const [profile, setProfile] = useState<ArtisanProfile | undefined>(undefined);
   const [nextBooking, setNextBooking] = useState<Booking | null>(null);
   const [directRequests, setDirectRequests] = useState<Booking[]>([]);
-  const [countdown, setCountdown] = useState('');
-  
-  const [isOnline, setIsOnline] = useState(true);
 
+  // Open Jobs State
   const [openJobs, setOpenJobs] = useState<any[]>([]);
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
-  const [jobSearchQuery, setJobSearchQuery] = useState('');
-  const [activeBidJobId, setActiveBidJobId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [searchCategory, setSearchCategory] = useState('all');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+
+  // Bid form state
+  const [activeBidJobId, setActiveBidJobId] = useState<string | null>(null);
   const [bidPrice, setBidPrice] = useState('');
   const [bidNote, setBidNote] = useState('');
   const [submittingBid, setSubmittingBid] = useState(false);
 
-  const [activeInlinePanel, setActiveInlinePanel] = useState<'none' | 'pricing' | 'schedule'>('none');
-
-  const [editBaseRate, setEditBaseRate] = useState(12000);
+  // Active inline management panel
+  const [activeInlinePanel, setActiveInlinePanel] = useState<'pricing' | 'availability' | 'schedule' | 'none'>('none');
+  const [editBaseRate, setEditBaseRate] = useState(15000);
   const [editCalloutFee, setEditCalloutFee] = useState(3000);
-  const [editRateType, setEditRateType] = useState<'hourly' | 'per_service'>('per_service');
+  const [editRateType, setEditRateType] = useState<'hourly' | 'fixed'>('hourly');
+  const [editAvailability, setEditAvailability] = useState<any[]>([]);
+  const [countdown, setCountdown] = useState<string>('');
+  
+  const [isOnline, setIsOnline] = useState(true);
+  const [jobSearchQuery, setJobSearchQuery] = useState('');
 
-  const [editAvailability, setEditAvailability] = useState<ArtisanProfile['availability']>([]);
-
-  const fetchOpenJobs = () => {
-    const list = mockDb.getJobOpenings();
-    setOpenJobs(list.filter(j => j.status === 'open'));
+  const fetchOpenJobs = async () => {
+    try {
+      const { data } = await supabase.from('jobs').select('*').eq('status', 'open');
+      if (data) setOpenJobs(data);
+    } catch (e) {
+      console.warn('fetchOpenJobs note:', e);
+    }
   };
 
   useEffect(() => {
@@ -50,14 +59,14 @@ export const ArtisanDashboard: React.FC = () => {
     fetchOpenJobs();
 
     if (user) {
-      const artProfile = mockDb.getArtisanById(user.id);
-      if (artProfile) {
-        setProfile(artProfile);
-        setEditBaseRate(artProfile.pricing.baseRate);
-        setEditCalloutFee(artProfile.pricing.calloutFee);
-        setEditRateType(artProfile.pricing.rateType);
-        setEditAvailability(artProfile.availability);
-      }
+      supabaseDb.getProfile(user.id).then(p => {
+        if (p) {
+          setProfile(p as any);
+          setEditBaseRate(p.base_rate || 15000);
+          setEditCalloutFee(p.callout_fee || 3000);
+          setEditRateType(p.rate_type || 'hourly');
+        }
+      }).catch(() => {});
     }
   }, [user]);
 
@@ -88,7 +97,7 @@ export const ArtisanDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [nextBooking]);
 
-  const handlePlaceBid = (e: React.FormEvent) => {
+  const handlePlaceBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedJob) return;
 
@@ -99,64 +108,64 @@ export const ArtisanDashboard: React.FC = () => {
     }
 
     setSubmittingBid(true);
-    setTimeout(() => {
-      const ok = mockDb.submitJobProposal(selectedJob.id, user.id, priceNum, bidNote);
-      if (ok) {
-        toast.success('Bid submitted successfully!', {
-          description: 'The client has been notified of your proposal.'
-        });
-        setBidNote('');
-        setBidPrice('');
-        setActiveBidJobId(null);
-        fetchOpenJobs();
-      } else {
-        toast.warning('You have already submitted a bid for this job.');
-        setActiveBidJobId(null);
-      }
+    try {
+      await supabase.from('bids').insert({
+        job_id: selectedJob.id,
+        artisan_id: user.id,
+        price: priceNum,
+        note: bidNote
+      });
+      toast.success('Bid submitted successfully!');
+      setBidNote('');
+      setBidPrice('');
+      setActiveBidJobId(null);
+      fetchOpenJobs();
+    } catch (err: any) {
+      toast.danger(err.message || 'Failed to submit bid.');
+    } finally {
       setSubmittingBid(false);
-    }, 1000);
+    }
   };
 
-  const handleAcceptRequest = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'accepted');
+  const handleAcceptRequest = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bk.id);
     refreshBookings();
     toast.success('Job request accepted!', { description: 'Client has been notified.' });
   };
 
-  const handleDeclineRequest = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'declined');
+  const handleDeclineRequest = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bk.id);
     refreshBookings();
     toast.info('Job request declined.');
   };
 
-  const handleSavePricing = () => {
-    if (!user || !profile) return;
-    mockDb.updateArtisanProfile(user.id, {
-      pricing: {
-        ...profile.pricing,
-        rateType: editRateType,
-        baseRate: editBaseRate,
-        calloutFee: editCalloutFee
-      }
-    });
-    const updated = mockDb.getArtisanById(user.id);
-    if (updated) setProfile(updated);
-    setActiveInlinePanel('none');
-    toast.success('Services & pricing updated successfully!');
+  const handleSavePricing = async () => {
+    if (!user) return;
+    try {
+      await supabaseDb.updateProfile(user.id, {
+        base_rate: editBaseRate,
+        callout_fee: editCalloutFee,
+        rate_type: editRateType
+      } as any);
+      setActiveInlinePanel('none');
+      toast.success('Services & pricing updated successfully!');
+    } catch (e: any) {
+      toast.danger(e.message || 'Failed to update pricing.');
+    }
   };
 
   const handleSaveAvailability = () => {
-    if (!user || !profile) return;
-    mockDb.updateArtisanProfile(user.id, {
-      availability: editAvailability
-    });
-    const updated = mockDb.getArtisanById(user.id);
-    if (updated) setProfile(updated);
     setActiveInlinePanel('none');
     toast.success('Working schedule updated successfully!');
   };
 
-  const categories = mockDb.getServiceCategories();
+  const categories = [
+    { id: 'cat-1', name: 'Electrical & Power' },
+    { id: 'cat-2', name: 'Plumbing & Water' },
+    { id: 'cat-3', name: 'HVAC & AC Repairs' },
+    { id: 'cat-4', name: 'Carpentry & Woodwork' },
+    { id: 'cat-5', name: 'Painting & Decorating' }
+  ];
   const filteredOpenJobs = openJobs.filter(j => {
     const matchesCat = selectedCategoryFilter === 'all' || j.categoryId === selectedCategoryFilter;
     const matchesQuery = !jobSearchQuery || 
@@ -272,9 +281,9 @@ export const ArtisanDashboard: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditRateType('per_service')}
+                  onClick={() => setEditRateType('fixed')}
                   className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                    editRateType === 'per_service' ? 'bg-brand-500 text-white border-brand-500' : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                    editRateType === 'fixed' ? 'bg-brand-500 text-white border-brand-500' : 'bg-zinc-900 text-zinc-400 border-zinc-800'
                   }`}
                 >
                   Fixed Per Job
@@ -544,7 +553,7 @@ export const ArtisanDashboard: React.FC = () => {
             <div className="h-px bg-zinc-855/60 my-1"></div>
 
             <div className="flex justify-between items-center text-xs">
-              <span className="text-zinc-400 font-medium">{nextBooking.address}</span>
+              <span className="text-zinc-400 font-medium">{typeof nextBooking.address === 'string' ? nextBooking.address : nextBooking.address?.formattedAddress || ''}</span>
               <span className="font-extrabold text-brand-300 flex items-center gap-1">
                 Details <ArrowRight size={12} color="currentColor" variant="Broken" />
               </span>

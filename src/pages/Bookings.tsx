@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Booking } from '../services/mockDb';
+import type { Booking } from '../types';
+import { supabase } from '../services/supabase';
 import { Calendar, MessageText, Money } from 'iconsax-react';
 import { Button, TextField, Label, Input, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner } from '@heroui/react';
 
@@ -19,12 +20,12 @@ export const Bookings: React.FC = () => {
   const [proposing, setProposing] = useState(false);
 
   // Itemized Pricing proposal states
-  const [laborCharge, setLaborCharge] = useState(12000);
-  const [materialsCharge, setMaterialsCharge] = useState(3000);
+  const [laborCharge, setLaborCharge] = useState<number>(10000);
+  const [materialsCharge, setMaterialsCharge] = useState<number>(0);
 
   useEffect(() => {
     refreshBookings();
-  }, []);
+  }, [user]);
 
   if (!user) return null;
 
@@ -38,7 +39,7 @@ export const Bookings: React.FC = () => {
   const handleOpenDetails = (bk: Booking) => {
     setSelectedBooking(bk);
     setShowPriceForm(false);
-    setLaborCharge(bk.estimatedAmount || 10000);
+    setLaborCharge((bk as any).estimatedAmount || 10000);
     setMaterialsCharge(0);
   };
 
@@ -46,39 +47,45 @@ export const Bookings: React.FC = () => {
     setSelectedBooking(null);
   };
 
-  const handleAccept = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'accepted');
+  const handleAccept = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bk.id);
     refreshBookings();
     handleCloseDetails();
   };
 
-  const handleDecline = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'declined');
+  const handleDecline = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bk.id);
     refreshBookings();
     handleCloseDetails();
   };
 
-  const handleStart = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'in_progress');
+  const handleStart = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'in_progress' }).eq('id', bk.id);
     refreshBookings();
     handleCloseDetails();
   };
 
-  const handleProposePrice = () => {
+  const handleProposePrice = async () => {
     if (!selectedBooking) return;
     const totalAmount = laborCharge + materialsCharge;
     setProposing(true);
-    setTimeout(() => {
-      mockDb.updateBookingStatus(selectedBooking.id, 'price_proposed', { finalAmount: totalAmount });
+    try {
+      await supabase.from('bookings').update({ 
+        status: 'price_proposed',
+        total_amount: totalAmount
+      }).eq('id', selectedBooking.id);
       refreshBookings();
+    } catch (e) {
+      console.error(e);
+    } finally {
       setProposing(false);
       setShowPriceForm(false);
       handleCloseDetails();
-    }, 1200);
+    }
   };
 
-  const handleMarkComplete = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'completed');
+  const handleMarkComplete = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'completed' }).eq('id', bk.id);
     refreshBookings();
     handleCloseDetails();
   };
@@ -240,7 +247,7 @@ export const Bookings: React.FC = () => {
                       <img src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${selectedBooking.seekerName}`} className="h-10 w-10 rounded-xl border border-zinc-800 object-cover shrink-0" alt="" />
                       <div className="text-left flex-1 min-w-0">
                         <span className="font-bold text-xs text-white block">{selectedBooking.seekerName}</span>
-                        <span className="text-[10px] text-zinc-500 block truncate">{selectedBooking.address}</span>
+                        <span className="text-[10px] text-zinc-500 block truncate">{typeof selectedBooking.address === 'string' ? selectedBooking.address : selectedBooking.address?.formattedAddress || ''}</span>
                       </div>
                       <Button
                         className="px-3.5 py-2 bg-transparent border border-zinc-800 hover:bg-zinc-900 rounded-xl text-xs font-bold text-brand-400 flex items-center gap-1.5 transition-all h-8 cursor-pointer"

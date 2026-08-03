@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
-import { mockDb } from '../services/mockDb';
 import { supabaseDb } from '../services/supabaseDb';
-import { uploadKycDocument } from '../services/supabase';
+import { uploadKycDocument, supabase } from '../services/supabase';
 import { 
   Briefcase, DocumentText, Calendar, Clock, Money, 
   Send2, Danger
@@ -17,7 +16,15 @@ import CustomCheckbox from '../components/CustomCheckbox';
 export const ArtisanOnboarding: React.FC = () => {
   const { user, refreshUser } = useAppStore();
   const [step, setStep] = useState(1);
-  
+  const [submitting, setSubmitting] = useState(false);
+  const categories = [
+    { id: 'cat-1', name: 'Electrical & Power' },
+    { id: 'cat-2', name: 'Plumbing & Water' },
+    { id: 'cat-3', name: 'HVAC & AC Repairs' },
+    { id: 'cat-4', name: 'Carpentry & Woodwork' },
+    { id: 'cat-5', name: 'Painting & Decorating' }
+  ];
+
   // Step 1: Services
   const [selectedCategory, setSelectedCategory] = useState('cat-1');
   const [businessName, setBusinessName] = useState('');
@@ -106,19 +113,14 @@ export const ArtisanOnboarding: React.FC = () => {
   };
 
   const handleSubmitOnboarding = async () => {
-    const categories = mockDb.getServiceCategories();
-    const activeCat = categories.find(c => c.id === selectedCategory) || categories[0];
-    
-    const mockServices = [
-      { name: `${activeCat.name} Standard Service`, description: `General maintenance and diagnostic fixes.`, price: baseRate }
-    ];
+    setSubmitting(true);
 
     try {
       await supabaseDb.becomeArtisan({
         businessName: businessName || `${user.fullName}'s Professional Service`,
         categoryId: selectedCategory,
-        bio,
-        yearsExperience: parseInt(experience) || 1,
+        bio: bio || 'Professional artisan on HustlePay',
+        yearsExperience: parseInt(experience) || 3,
         baseRate,
         calloutFee,
         rateType,
@@ -128,32 +130,20 @@ export const ArtisanOnboarding: React.FC = () => {
           passport_photo: kycDocs.photoUrl || ''
         }
       });
-    } catch (err) {
-      console.warn('Supabase becomeArtisan Fallback:', err);
+      await supabase.from('profiles').update({ kyc_status: 'pending_review' }).eq('id', user.id);
+      await refreshUser();
+      toast.success('Onboarding application submitted for review!');
+    } catch (err: any) {
+      toast.danger(err.message || 'Failed to submit application.');
+    } finally {
+      setSubmitting(false);
     }
-
-    mockDb.setupArtisanProfile(
-      user.id,
-      mockServices,
-      {
-        rateType,
-        baseRate,
-        calloutFee,
-        additionalCharges
-      },
-      availability,
-      bio,
-      parseInt(experience),
-      businessName || `${user.fullName}'s Professional Service`
-    );
-
-    refreshUser();
   };
 
-  const handleSendReminder = () => {
+  const handleSendReminder = async () => {
     const now = new Date().toISOString();
-    mockDb.updateUser(user.id, { lastReminderSentAt: now });
-    refreshUser();
+    await supabase.from('profiles').update({ last_reminder_sent_at: now }).eq('id', user.id);
+    await refreshUser();
     toast.success('Approval reminder sent successfully!');
   };
 
@@ -170,11 +160,6 @@ export const ArtisanOnboarding: React.FC = () => {
     const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
     const msDiff = (sentDate + sevenDaysInMs) - Date.now();
     return Math.ceil(msDiff / (24 * 60 * 60 * 1000));
-  };
-
-  const handleAdminApprove = () => {
-    mockDb.adminApproveArtisan(user.id, true);
-    refreshUser();
   };
 
   // PENDING APPROVAL VIEW (ART-6, ART-7)
@@ -210,19 +195,6 @@ export const ArtisanOnboarding: React.FC = () => {
             <span>{isReminderDisabled ? `Reminder sent (Wait ${getCooldownDaysLeft()}d)` : 'Send Approval Reminder'}</span>
           </Button>
 
-          <div className="h-px bg-zinc-900 my-4"></div>
-
-          {/* Admin bypass helper */}
-          <div className="glass border-brand-500/20 bg-brand-500/5 p-4 rounded-xl text-left border">
-            <div className="font-semibold text-xs text-brand-300 mb-1">Demo Shortcut Panel</div>
-            <p className="text-[10px] text-zinc-400 mb-3">Skip waiting for manual admin approval. Approve this profile instantly to view the Artisan dashboard:</p>
-            <Button
-              className="w-full font-bold bg-brand-500 hover:bg-brand-600 text-xs h-10 rounded-lg text-white transition-all"
-              onClick={handleAdminApprove}
-            >
-              Simulate Admin Approval
-            </Button>
-          </div>
         </div>
       </div>
     );
@@ -260,7 +232,7 @@ export const ArtisanOnboarding: React.FC = () => {
                     </SelectTrigger>
                     <SelectPopover className="bg-zinc-955 border border-zinc-855 rounded-xl p-1 text-white z-50">
                       <ListBox className="outline-none">
-                        {mockDb.getServiceCategories().map(cat => (
+                        {categories.map(cat => (
                           <ListBoxItem id={cat.id} textValue={cat.name} className="p-2 text-xs text-zinc-300 hover:text-white hover:bg-brand-500 rounded-lg cursor-pointer outline-none">
                             {cat.name}
                           </ListBoxItem>

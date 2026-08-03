@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type ArtisanProfile } from '../services/mockDb';
+import type { ArtisanProfile } from '../types';
+import { supabaseDb } from '../services/supabaseDb';
+import { supabase } from '../services/supabase';
 import {
   SearchNormal1, Setting4, Star, Location, CloseCircle,
   Heart, MessageText
@@ -18,9 +20,9 @@ import { Requests } from './Requests';
 // ── Greeting helpers ──────────────────────────────────────────────
 const getGreeting = (): string => {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'Good Morning';
+  if (h < 17) return 'Good Afternoon';
+  return 'Good Evening';
 };
 
 const greetingSubtitles = [
@@ -112,7 +114,14 @@ export const SeekerHome: React.FC = () => {
   };
 
   // Categories list
-  const categories = mockDb.getServiceCategories();
+  const categories = [
+    { id: 'cat-1', name: 'Electrical & Power', icon: '⚡' },
+    { id: 'cat-2', name: 'Plumbing & Water', icon: '🚰' },
+    { id: 'cat-3', name: 'HVAC & AC Repairs', icon: '❄️' },
+    { id: 'cat-4', name: 'Carpentry & Woodwork', icon: '🪚' },
+    { id: 'cat-5', name: 'Painting & Decorating', icon: '🎨' },
+    { id: 'cat-6', name: 'Cleaning & Janitorial', icon: '🧹' }
+  ];
 
   const startEditingJob = () => {
     if (!selectedJob) return;
@@ -125,7 +134,7 @@ export const SeekerHome: React.FC = () => {
     setIsEditingJob(true);
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!selectedJob || !user) return;
     const budgetNum = parseFloat(editJobBudget);
     if (isNaN(budgetNum) || budgetNum <= 0) {
@@ -133,28 +142,31 @@ export const SeekerHome: React.FC = () => {
       return;
     }
 
-    const success = mockDb.updateJobOpening(selectedJob.id, {
-      title: editJobTitle,
-      categoryId: editJobCategory,
-      budget: budgetNum,
-      address: editJobAddress,
-      description: editJobDescription,
-      imageUrl: editJobImage || undefined
-    });
-
-    if (success) {
+    try {
+      await supabase.from('jobs').update({
+        title: editJobTitle,
+        category_id: editJobCategory,
+        budget: budgetNum,
+        address: editJobAddress,
+        description: editJobDescription,
+        image_url: editJobImage || null
+      }).eq('id', selectedJob.id);
       toast.success('Job details updated successfully!');
       fetchOpenings();
-      setSelectedJob(mockDb.getJobOpeningById(selectedJob.id) || null);
       setIsEditingJob(false);
-    } else {
+    } catch (e: any) {
       toast.warning('Failed to update job details.');
     }
   };
 
-  const fetchOpenings = () => {
+  const fetchOpenings = async () => {
     if (user) {
-      setOpenings(mockDb.getJobOpenings(user.id));
+      try {
+        const { data } = await supabase.from('jobs').select('*').eq('seeker_id', user.id);
+        if (data) setOpenings(data);
+      } catch (e) {
+        console.warn('fetchOpenings note:', e);
+      }
     }
   };
 
@@ -162,7 +174,7 @@ export const SeekerHome: React.FC = () => {
     fetchOpenings();
   }, [user]);
 
-  const handleCreateJob = (e: React.FormEvent) => {
+  const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     if (!jobTitle || !jobCategory || !jobDescription || !jobBudget || !jobAddress) {
@@ -177,47 +189,44 @@ export const SeekerHome: React.FC = () => {
     }
 
     setPostingJob(true);
-    setTimeout(() => {
-      mockDb.createJobOpening(
-        user.id,
-        user.fullName,
-        jobTitle,
-        jobCategory,
-        jobDescription,
-        budgetNum,
-        jobAddress,
-        jobImage || undefined
-      );
-      toast.success('Job opening posted successfully!', {
-        description: 'Artisans will notify you with proposals soon.'
+    try {
+      await supabase.from('jobs').insert({
+        seeker_id: user.id,
+        seeker_name: user.fullName,
+        title: jobTitle,
+        category_id: jobCategory,
+        description: jobDescription,
+        budget: budgetNum,
+        address: jobAddress,
+        image_url: jobImage || null,
+        status: 'open'
       });
+      toast.success('Job opening posted successfully!');
       setPostingJob(false);
       setShowCreateJobModal(false);
-      
-      // Reset form fields
       setJobTitle('');
       setJobCategory('');
       setJobDescription('');
       setJobBudget('');
       setJobImage('');
-      
       fetchOpenings();
-    }, 1000);
+    } catch (err: any) {
+      setPostingJob(false);
+      toast.warning(err.message || 'Failed to create job.');
+    }
   };
 
-  const handleAcceptBid = (proposalId: string) => {
+  const handleAcceptBid = async (proposalId: string) => {
     if (!selectedJob) return;
-    const booking = mockDb.acceptJobProposal(selectedJob.id, proposalId);
-    if (booking) {
-      toast.success('Bid accepted!', {
-        description: `Booking reference: ${booking.reference}`
-      });
+    try {
+      await supabase.from('jobs').update({ status: 'in_progress' }).eq('id', selectedJob.id);
+      toast.success('Bid accepted!');
       setShowJobDetailsModal(false);
       setSelectedJob(null);
       fetchOpenings();
       navigate('/history');
-    } else {
-      toast.warning('Could not accept proposal. Please try again.');
+    } catch (e: any) {
+      toast.warning(e.message || 'Failed to accept bid.');
     }
   };
 
@@ -263,26 +272,23 @@ export const SeekerHome: React.FC = () => {
   useEffect(() => {
     try {
       let stored = localStorage.getItem('hp_recently_viewed');
-      if (!stored) {
-        // Seed with first 3 mock profiles for presentation
-        const seedIds = mockDb.getArtisans(undefined, '', {}).slice(0, 3).map(a => a.id);
-        localStorage.setItem('hp_recently_viewed', JSON.stringify(seedIds));
-        stored = JSON.stringify(seedIds);
+      if (stored) {
+        const ids: string[] = JSON.parse(stored);
+        Promise.all(ids.map(id => supabaseDb.getProfile(id))).then(profiles => {
+          setRecentlyViewed(profiles.filter(Boolean) as any);
+        });
       }
-      const ids: string[] = JSON.parse(stored);
-      const list = ids
-        .map(id => mockDb.getArtisanById(id))
-        .filter((art): art is ArtisanProfile => art !== undefined);
-      setRecentlyViewed(list);
     } catch (e) {
       console.error('Failed to load recently viewed:', e);
     }
   }, []);
 
   useEffect(() => {
-    const all = mockDb.getArtisans(undefined, query, { minRating, maxDistance });
-    const sorted = [...all].sort((a, b) => b.ratingAverage - a.ratingAverage);
-    setRecommended(sorted.slice(0, 8));
+    supabaseDb.getArtisans(undefined, query).then(list => {
+      if (list) {
+        setRecommended(list as any);
+      }
+    }).catch(() => {});
   }, [query, minRating, maxDistance]);
 
   const clearFilters = () => {
@@ -650,7 +656,7 @@ export const SeekerHome: React.FC = () => {
 
       {/* ── Top Categories ──────────────────────────────────────── */}
       {(() => {
-        const cats = mockDb.getServiceCategories().slice(0, 4);
+        const topCats = categories.slice(0, 4);
         return (
           <div className="px-5 mb-6">
             {/* Header */}
@@ -668,10 +674,7 @@ export const SeekerHome: React.FC = () => {
 
             {/* 2×2 Grid */}
             <div className="grid grid-cols-2 gap-3">
-              {cats.map(cat => {
-                const catArtisans = mockDb.getArtisans(cat.id, '', {});
-                const preview = catArtisans.slice(0, 2);
-                const count = catArtisans.length;
+              {topCats.map(cat => {
                 return (
                   <button
                     key={cat.id}
@@ -685,20 +688,8 @@ export const SeekerHome: React.FC = () => {
 
                     {/* Overlapping avatars + count badge */}
                     <div className="flex items-center">
-                      {preview.map((art, i) => (
-                        <img
-                          key={art.id}
-                          src={art.avatarUrl}
-                          alt={art.fullName}
-                          className="h-11 w-11 rounded-full object-cover ring-2 ring-zinc-50"
-                          style={{ marginLeft: i === 0 ? 0 : -14, zIndex: i + 1, position: 'relative' }}
-                        />
-                      ))}
-                      <div
-                        className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center ring-2 ring-zinc-50"
-                        style={{ marginLeft: preview.length > 0 ? -14 : 0, zIndex: preview.length + 1, position: 'relative' }}
-                      >
-                        <span className="text-[10px] font-extrabold" style={{ color: 'white' }}>+{count}</span>
+                      <div className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center ring-2 ring-zinc-50">
+                        <span className="text-[10px] font-extrabold text-white">Explore</span>
                       </div>
                     </div>
                   </button>

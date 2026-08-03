@@ -1,4 +1,4 @@
-import { mockDb } from './mockDb';
+import { supabase } from './supabase';
 
 // VAPID Public Key - In production, this should come from your backend
 // Generated with: npx web-push generate-vapid-keys
@@ -172,8 +172,15 @@ class PushNotificationService {
 
     localStorage.setItem('hp_push_subscription', JSON.stringify(subscriptionData));
 
-    // Also save to mockDb for simulation
-    mockDb.createNotification(this.userId, 'Push Notifications Enabled', 'You will now receive real-time notifications for bookings, messages, and payments.');
+    if (this.userId) {
+      supabase.from('notifications').insert({
+        user_id: this.userId,
+        title: 'Push Notifications Enabled',
+        message: 'You will now receive real-time notifications for bookings, messages, and payments.',
+        type: 'system',
+        read: false
+      }).then(() => {});
+    }
   }
 
   // Load subscription from localStorage
@@ -244,7 +251,13 @@ class PushNotificationService {
     await this.showLocalNotification(payload);
 
     if (this.userId) {
-      mockDb.createNotification(this.userId, payload.title, payload.body);
+      supabase.from('notifications').insert({
+        user_id: this.userId,
+        title: payload.title,
+        message: payload.body,
+        type: 'system',
+        read: false
+      }).then(() => {});
     }
   }
 
@@ -273,7 +286,13 @@ class PushNotificationService {
     await this.showLocalNotification(payload);
 
     if (this.userId) {
-      mockDb.createNotification(this.userId, payload.title, payload.body);
+      supabase.from('notifications').insert({
+        user_id: this.userId,
+        title: payload.title,
+        message: payload.body,
+        type: 'system',
+        read: false
+      }).then(() => {});
     }
   }
 }

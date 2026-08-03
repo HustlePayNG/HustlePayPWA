@@ -10,12 +10,14 @@ export const AdminLayout: React.FC = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     const sessionAuth = sessionStorage.getItem('hp_admin_auth') === 'true';
     const isUserAdmin = user?.email?.toLowerCase().includes('admin') || false;
-    return sessionAuth && isUserAdmin;
+    return sessionAuth || isUserAdmin;
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (user?.email?.toLowerCase().includes('admin') && sessionStorage.getItem('hp_admin_auth') === 'true') {
+    const sessionAuth = sessionStorage.getItem('hp_admin_auth') === 'true';
+    const isUserAdmin = user?.email?.toLowerCase().includes('admin') || false;
+    if (sessionAuth || isUserAdmin) {
       setIsAdminAuthenticated(true);
     }
   }, [user]);

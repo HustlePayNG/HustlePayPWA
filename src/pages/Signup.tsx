@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { User as UserIcon, Sms, Call, Location } from 'iconsax-react';
-import { TextField, Label, Button, Spinner, Fieldset } from '@heroui/react';
+import { TextField, Label, Button, Spinner, Fieldset, toast } from '@heroui/react';
 import CustomCheckbox from '../components/CustomCheckbox';
 import BackgroundVideo from '../components/BackgroundVideo';
 import { liquidGlass } from '../components/liquidGlass';
@@ -11,7 +11,6 @@ import { supabase, signInWithGoogle } from '../services/supabase';
 
 export const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const signup = useAppStore(state => state.signup);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -94,17 +93,20 @@ export const Signup: React.FC = () => {
     setLoading(true);
 
     try {
+      localStorage.setItem('hp_pending_signup_email', email);
+      localStorage.setItem('hp_pending_signup_name', name);
+
       const redirectUrl = `${window.location.origin}/auth/callback`;
       const { data, error: signUpErr } = await supabase.auth.signUp({
         email,
-        password: password || 'HustlePay2026!',
+        password: password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: name,
             phone_number: phone,
             address,
-            role: 'seeker'
+            role: role
           }
         }
       });
@@ -112,18 +114,13 @@ export const Signup: React.FC = () => {
       if (signUpErr) throw signUpErr;
 
       if (data.user) {
-        useAppStore.getState().syncSupabaseUserSession(data.user);
-      } else {
-        signup(name, email, phone, address, role);
+        await useAppStore.getState().syncSupabaseUserSession(data.user);
       }
       setLoading(false);
       navigate('/verify-email', { state: { email, name } });
     } catch (err: any) {
-      console.warn('Supabase Signup Warning/Fallback:', err);
-      // Direct store fallback
-      signup(name, email, phone, address, role);
       setLoading(false);
-      navigate('/verify-email', { state: { email, name } });
+      toast.danger(err.message || 'Registration failed. Please check your details.');
     }
   };
 

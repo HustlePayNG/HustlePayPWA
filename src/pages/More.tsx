@@ -19,16 +19,16 @@ export const More: React.FC = () => {
     n => !n.read && (
       n.title.toLowerCase().includes('payment') || 
       n.title.toLowerCase().includes('withdrawal') || 
-      n.body.toLowerCase().includes('pay') || 
-      n.body.toLowerCase().includes('refund') || 
-      n.body.toLowerCase().includes('wallet')
+      (n.body || n.message || '').toLowerCase().includes('pay') || 
+      (n.body || n.message || '').toLowerCase().includes('refund') || 
+      (n.body || n.message || '').toLowerCase().includes('wallet')
     )
   );
 
   const hasDisputeNotification = notifications.some(
     n => !n.read && (
       n.title.toLowerCase().includes('dispute') || 
-      n.body.toLowerCase().includes('dispute')
+      (n.body || n.message || '').toLowerCase().includes('dispute')
     )
   );
 

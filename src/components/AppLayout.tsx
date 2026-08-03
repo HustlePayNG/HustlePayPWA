@@ -68,7 +68,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const hasUnreadMessages = notifications.some(
     n => !n.read && (
       n.title.toLowerCase().includes('message') || 
-      n.body.toLowerCase().includes('message') || 
+      (n.body || n.message || '').toLowerCase().includes('message') || 
       n.title.toLowerCase().includes('chat')
     )
   );
@@ -76,7 +76,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const hasUnreadOther = notifications.some(
     n => !n.read && !(
       n.title.toLowerCase().includes('message') || 
-      n.body.toLowerCase().includes('message') || 
+      (n.body || n.message || '').toLowerCase().includes('message') || 
       n.title.toLowerCase().includes('chat')
     )
   );

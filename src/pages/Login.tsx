@@ -9,13 +9,11 @@ import { supabase, signInWithGoogle } from '../services/supabase';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const login = useAppStore(state => state.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const tempRole: 'seeker' | 'artisan' = 'seeker';
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -65,25 +63,17 @@ export const Login: React.FC = () => {
         password
       });
 
-      if (authError) {
-        // Fallback to demo account login if Supabase auth fails for test account
-        const ok = login(email, tempRole);
-        if (ok) {
-          setLoading(false);
-          if (email.toLowerCase().includes('admin')) {
-            navigate('/backdoor');
-          } else {
-            navigate('/');
-          }
-          return;
-        }
-        throw authError;
-      }
+      if (authError) throw authError;
 
       if (data.user) {
-        useAppStore.getState().syncSupabaseUserSession(data.user);
+        const isAdminEmail = email.toLowerCase().includes('admin');
+        if (isAdminEmail) {
+          sessionStorage.setItem('hp_admin_auth', 'true');
+        }
+        await useAppStore.getState().syncSupabaseUserSession(data.user);
         setLoading(false);
-        if (email.toLowerCase().includes('admin')) {
+        toast.success('Signed in successfully');
+        if (isAdminEmail) {
           navigate('/backdoor');
         } else {
           navigate('/');
@@ -92,7 +82,7 @@ export const Login: React.FC = () => {
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || 'Invalid login credentials.');
+      setError(err.message || 'Invalid email or password.');
     }
   };
 

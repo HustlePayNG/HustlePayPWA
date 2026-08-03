@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { mockDb, type User, type Booking, type Wallet, type Notification } from '../services/mockDb';
+import type { User, Booking, Wallet, Notification } from '../types';
 import { supabase } from '../services/supabase';
+import { supabaseDb } from '../services/supabaseDb';
 
 interface AppState {
   user: User | null;
@@ -10,107 +11,111 @@ interface AppState {
   notifications: Notification[];
   unreadCount: number;
   isLiveSupabase: boolean;
+  isAuthInitializing: boolean;
   
   // Actions
   login: (email: string, role: 'seeker' | 'artisan') => boolean;
   signup: (name: string, email: string, phone: string, address: string, initialRole: 'seeker' | 'artisan') => void;
   logout: () => void;
   switchMode: () => void;
-  refreshUser: () => void;
-  refreshWallet: () => void;
-  refreshBookings: () => void;
-  refreshNotifications: () => void;
-  updateUserProfile: (updates: Partial<User>) => void;
-  syncSupabaseUserSession: (supabaseUser: any) => void;
+  refreshUser: () => Promise<void>;
+  refreshWallet: () => Promise<void>;
+  refreshBookings: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
+  updateUserProfile: (updates: Partial<User>) => Promise<void>;
+  syncSupabaseUserSession: (supabaseUser: any) => Promise<void>;
+  setAuthInitializing: (initializing: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
-  // Load session from storage if it exists
-  const getSessionUser = (): User | null => {
-    const savedId = sessionStorage.getItem('hp_session_user_id');
-    if (!savedId) return null;
-    const u = mockDb.getUserById(savedId);
-    return u || null;
-  };
-
-  const initialUser = getSessionUser();
-  const initialMode = initialUser ? initialUser.activeModePreference : 'seeker';
-
   return {
-    user: initialUser,
-    activeMode: initialMode,
+    user: null,
+    activeMode: 'seeker',
     bookings: [],
     wallet: null,
     notifications: [],
     unreadCount: 0,
-    isLiveSupabase: !!import.meta.env.VITE_SUPABASE_URL,
+    isLiveSupabase: true,
+    isAuthInitializing: true,
 
-    login: (email: string, role: 'seeker' | 'artisan') => {
-      const user = mockDb.login(email, role);
-      if (user) {
-        sessionStorage.setItem('hp_session_user_id', user.id);
-        set({ user, activeMode: user.activeModePreference });
-        get().refreshWallet();
-        get().refreshBookings();
-        get().refreshNotifications();
-        return true;
-      }
+    setAuthInitializing: (initializing: boolean) => set({ isAuthInitializing: initializing }),
+
+    login: () => {
+      // Deprecated mock method, handled via Supabase Auth in Login component
       return false;
     },
 
-    signup: (name: string, email: string, phone: string, address: string, initialRole: 'seeker' | 'artisan') => {
-      const newUser = mockDb.signup({
-        email,
-        fullName: name,
-        phone,
-        avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${name}`,
-        address: {
-          formattedAddress: address,
-          latitude: 6.5244, // Default Lagos Coordinates
-          longitude: 3.3792
-        }
-      }, initialRole);
-
-      sessionStorage.setItem('hp_session_user_id', newUser.id);
-      set({ user: newUser, activeMode: initialRole });
-      get().refreshWallet();
-      get().refreshBookings();
-      get().refreshNotifications();
+    signup: () => {
+      // Deprecated mock method, handled via Supabase Auth in Signup component
     },
 
-    syncSupabaseUserSession: (supabaseUser: any) => {
-      if (!supabaseUser) return;
-      
-      sessionStorage.setItem('hp_session_user_id', supabaseUser.id);
-      let existing = mockDb.getUserById(supabaseUser.id);
-      
-      if (!existing) {
-        // Create user profile in mock DB matching Supabase user metadata
-        existing = mockDb.signup({
-          email: supabaseUser.email || 'user@hustlepay.com',
-          fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'HustlePay User',
-          phone: supabaseUser.phone || '08012345678',
-          avatarUrl: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${supabaseUser.id}`,
-          address: {
-            formattedAddress: 'Lagos, Nigeria',
-            latitude: 6.5244,
-            longitude: 3.3792
-          }
-        }, 'seeker');
-        // Set exact ID to match Supabase Auth UUID
-        existing.id = supabaseUser.id;
+    syncSupabaseUserSession: async (supabaseUser: any) => {
+      if (!supabaseUser) {
+        set({ user: null, isAuthInitializing: false });
+        return;
       }
 
-      set({ user: existing, activeMode: existing.activeModePreference });
-      get().refreshWallet();
-      get().refreshBookings();
-      get().refreshNotifications();
+      localStorage.setItem('hp_session_user_id', supabaseUser.id);
+      
+      try {
+        const profile = await supabaseDb.getProfile(supabaseUser.id);
+        if (profile) {
+          const userObj: User = {
+            id: profile.id,
+            email: profile.email || supabaseUser.email || '',
+            fullName: profile.full_name || supabaseUser.user_metadata?.full_name || 'HustlePay User',
+            phone: profile.phone_number || supabaseUser.user_metadata?.phone_number || '',
+            avatarUrl: profile.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${profile.id}`,
+            role: profile.role || 'seeker',
+            activeModePreference: profile.active_mode_preference || 'seeker',
+            address: profile.address || { formattedAddress: 'Lagos, Nigeria', latitude: 6.5244, longitude: 3.3792 },
+            kycStatus: profile.kyc_status || 'unverified',
+            businessName: profile.business_name,
+            categoryId: profile.category_id,
+            bio: profile.bio,
+            yearsExperience: profile.years_experience,
+            baseRate: profile.base_rate,
+            calloutFee: profile.callout_fee,
+            rateType: profile.rate_type,
+            rating: profile.rating || 5.0,
+            completedJobsCount: profile.completed_jobs_count || 0,
+            verifiedBadge: profile.verified_badge || false,
+            createdAt: profile.created_at || new Date().toISOString()
+          };
+
+          set({ user: userObj, activeMode: userObj.activeModePreference, isAuthInitializing: false });
+          get().refreshWallet();
+          get().refreshBookings();
+          get().refreshNotifications();
+          return;
+        }
+      } catch (err) {
+        console.warn('Profile fetch note:', err);
+      }
+
+      // Fallback profile object constructed from Supabase User Auth metadata
+      const fallbackUser: User = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'HustlePay User',
+        phone: supabaseUser.phone || supabaseUser.user_metadata?.phone_number || '',
+        avatarUrl: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${supabaseUser.id}`,
+        role: supabaseUser.user_metadata?.role || 'seeker',
+        activeModePreference: supabaseUser.user_metadata?.role === 'artisan' ? 'artisan' : 'seeker',
+        address: { formattedAddress: supabaseUser.user_metadata?.address || 'Lagos, Nigeria', latitude: 6.5244, longitude: 3.3792 },
+        kycStatus: 'unverified',
+        createdAt: new Date().toISOString()
+      };
+
+      set({ user: fallbackUser, activeMode: fallbackUser.activeModePreference, isAuthInitializing: false });
     },
 
     logout: () => {
+      localStorage.removeItem('hp_session_user_id');
       sessionStorage.removeItem('hp_session_user_id');
+      sessionStorage.removeItem('hp_admin_auth');
       supabase.auth.signOut().catch(() => {});
-      set({ user: null, activeMode: 'seeker', bookings: [], wallet: null, notifications: [], unreadCount: 0 });
+      set({ user: null, activeMode: 'seeker', bookings: [], wallet: null, notifications: [], unreadCount: 0, isAuthInitializing: false });
     },
 
     switchMode: () => {
@@ -118,47 +123,72 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!user) return;
       const targetMode: 'seeker' | 'artisan' = activeMode === 'seeker' ? 'artisan' : 'seeker';
       
-      const updatedUser = mockDb.updateUser(user.id, { activeModePreference: targetMode });
+      const updatedUser = { ...user, activeModePreference: targetMode };
       set({ user: updatedUser, activeMode: targetMode });
+      supabaseDb.updateProfile(user.id, { active_mode_preference: targetMode } as any).catch(() => {});
       get().refreshBookings();
     },
 
-    refreshUser: () => {
+    refreshUser: async () => {
       const { user } = get();
       if (!user) return;
-      const refreshed = mockDb.getUserById(user.id);
-      if (refreshed) {
-        set({ user: refreshed });
+      try {
+        const profile = await supabaseDb.getProfile(user.id);
+        if (profile) {
+          get().syncSupabaseUserSession({ ...user, ...profile });
+        }
+      } catch (e) {
+        console.error('refreshUser error:', e);
       }
     },
 
-    refreshWallet: () => {
+    refreshWallet: async () => {
       const { user } = get();
       if (!user) return;
-      const w = mockDb.getWallet(user.id);
-      set({ wallet: w });
+      try {
+        const w = await supabaseDb.getWallet(user.id);
+        if (w) set({ wallet: w });
+      } catch (e) {
+        console.warn('refreshWallet error:', e);
+      }
     },
 
-    refreshBookings: () => {
-      const { user, activeMode } = get();
-      if (!user) return;
-      const list = mockDb.getBookings(user.id, activeMode);
-      set({ bookings: list });
-    },
-
-    refreshNotifications: () => {
+    refreshBookings: async () => {
       const { user } = get();
       if (!user) return;
-      const list = mockDb.getNotifications(user.id);
-      const unread = list.filter(n => !n.read).length;
-      set({ notifications: list, unreadCount: unread });
+      try {
+        const { data } = await supabase.from('bookings').select('*').or(`seeker_id.eq.${user.id},artisan_id.eq.${user.id}`);
+        if (data) set({ bookings: data as any });
+      } catch (e) {
+        console.warn('refreshBookings error:', e);
+      }
     },
 
-    updateUserProfile: (updates: Partial<User>) => {
+    refreshNotifications: async () => {
       const { user } = get();
       if (!user) return;
-      const updated = mockDb.updateUser(user.id, updates);
+      try {
+        const { data } = await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        if (data) {
+          const list = data as Notification[];
+          const unread = list.filter(n => !n.read).length;
+          set({ notifications: list, unreadCount: unread });
+        }
+      } catch (e) {
+        console.warn('refreshNotifications error:', e);
+      }
+    },
+
+    updateUserProfile: async (updates: Partial<User>) => {
+      const { user } = get();
+      if (!user) return;
+      const updated = { ...user, ...updates };
       set({ user: updated });
+      try {
+        await supabaseDb.updateProfile(user.id, updates as any);
+      } catch (e) {
+        console.warn('updateUserProfile error:', e);
+      }
     }
   };
 });

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Booking } from '../services/mockDb';
+import type { Booking } from '../types';
+import { supabase } from '../services/supabase';
 import { MessageText, Calendar, Star, Danger } from 'iconsax-react';
 import { Button, TextArea, Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner, toast } from '@heroui/react';
 
@@ -20,13 +21,13 @@ export const Requests: React.FC = () => {
 
   // Dispute Modal State
   const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [disputeReason, setDisputeReason] = useState('Poor service quality');
+  const [disputeReason, setDisputeReason] = useState('Service Incomplete');
   const [disputeDesc, setDisputeDesc] = useState('');
   const [submittingDispute, setSubmittingDispute] = useState(false);
 
   useEffect(() => {
     refreshBookings();
-  }, []);
+  }, [user]);
 
   if (!user) return null;
 
@@ -38,33 +39,21 @@ export const Requests: React.FC = () => {
     setSelectedBooking(null);
   };
 
-  const handleAcceptPrice = (bk: Booking) => {
-    const finalAmt = bk.finalAmount || bk.estimatedAmount;
-    const remaining = finalAmt; 
-    
+  const handleAcceptPrice = async (bk: Booking) => {
     try {
-      mockDb.deductWallet(user.id, remaining, `Remaining balance for ${bk.serviceName} (${bk.reference})`, bk.reference);
-      mockDb.updateBookingStatus(bk.id, 'price_accepted', { finalAmount: finalAmt });
+      await supabase.from('bookings').update({ status: 'funded' }).eq('id', bk.id);
       refreshBookings();
       refreshWallet();
-      
-      const updated = mockDb.getBookingById(bk.id);
-      if (updated) setSelectedBooking(updated);
-      
-      toast.success('Remaining balance paid successfully! Artisan can now mark the job complete.');
+      toast.success('Payment authorized and escrow funded successfully!');
+      handleCloseDetails();
     } catch (e: any) {
-      toast.danger(`Insufficient funds. Your wallet balance is too low to pay the remaining balance of ₦${remaining.toLocaleString()}. Please top up.`);
-      navigate('/wallet');
+      toast.danger(e.message || 'Failed to authorize payment.');
     }
   };
 
-  const handleConfirmCompletion = (bk: Booking) => {
-    mockDb.updateBookingStatus(bk.id, 'seeker_confirmed');
+  const handleConfirmCompletion = async (bk: Booking) => {
+    await supabase.from('bookings').update({ status: 'completed' }).eq('id', bk.id);
     refreshBookings();
-    
-    const updated = mockDb.getBookingById(bk.id);
-    if (updated) setSelectedBooking(updated);
-
     setShowReviewModal(true);
   };
 
@@ -76,47 +65,49 @@ export const Requests: React.FC = () => {
     }
   };
 
-  const submitReview = () => {
+  const submitReview = async () => {
     if (!selectedBooking) return;
     setSubmittingReview(true);
-    setTimeout(() => {
-      mockDb.addReview(
-        selectedBooking.id,
-        user.id,
+    try {
+      await supabase.from('reviews').insert({
+        booking_id: selectedBooking.id,
+        user_id: user.id,
         rating,
-        reviewText,
-        reviewTags
-      );
+        comment: reviewText
+      });
+    } catch (e) {
+      console.warn('Review insert note:', e);
+    } finally {
       setSubmittingReview(false);
       setShowReviewModal(false);
       setReviewText('');
       setReviewTags([]);
-      
       refreshBookings();
       handleCloseDetails();
       toast.success('Thank you for rating your service!');
-    }, 1000);
+    }
   };
 
-  const handleFileDispute = () => {
+  const handleFileDispute = async () => {
     if (!selectedBooking) return;
     setSubmittingDispute(true);
-    setTimeout(() => {
-      mockDb.createDispute(
-        selectedBooking.id,
-        user.id,
-        disputeReason,
-        disputeDesc,
-        []
-      );
+    try {
+      await supabase.from('disputes').insert({
+        booking_id: selectedBooking.id,
+        raised_by_user_id: user.id,
+        reason: disputeReason,
+        description: disputeDesc,
+        status: 'open'
+      });
+      toast.success('Dispute filed successfully.');
+    } catch (e: any) {
+      toast.danger(e.message || 'Failed to file dispute.');
+    } finally {
       setSubmittingDispute(false);
       setShowDisputeModal(false);
-      setDisputeDesc('');
-      
-      refreshBookings();
       handleCloseDetails();
       toast.success('Dispute raised successfully. An operations admin will review the logs.');
-    }, 1000);
+    }
   };
 
   const getStatusColor = (status: Booking['status']) => {

@@ -12,11 +12,14 @@ export const EmailVerification: React.FC = () => {
   const location = useLocation();
   const { user, syncSupabaseUserSession } = useAppStore();
 
-  const targetEmail = location.state?.email || user?.email || localStorage.getItem('hp_pending_email') || 'your email';
+  const targetEmail = location.state?.email || localStorage.getItem('hp_pending_signup_email') || localStorage.getItem('hp_pending_email') || user?.email || 'your email';
   const cardRef = useRef<HTMLDivElement>(null);
 
   const [verified, setVerified] = useState(false);
   const [resending, setResending] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
   const [timer, setTimer] = useState(60);
 
   // Store pending email for persistence on page reload
@@ -69,6 +72,54 @@ export const EmailVerification: React.FC = () => {
     };
   }, [navigate, syncSupabaseUserSession]);
 
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length < 6) {
+      setOtpError('Please enter a 6-digit code.');
+      return;
+    }
+
+    setVerifyingOtp(true);
+    setOtpError('');
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: targetEmail,
+        token: otpCode.trim(),
+        type: 'signup'
+      });
+
+      if (error) {
+        // Retry with type 'email'
+        const { data: data2, error: error2 } = await supabase.auth.verifyOtp({
+          email: targetEmail,
+          token: otpCode.trim(),
+          type: 'email'
+        });
+
+        if (error2) {
+          throw error2;
+        }
+
+        if (data2.user) {
+          syncSupabaseUserSession(data2.user);
+        }
+      } else if (data.user) {
+        syncSupabaseUserSession(data.user);
+      }
+
+      setVerified(true);
+      toast.success('Email verified successfully!');
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 1200);
+    } catch (err: any) {
+      setOtpError(err.message || 'Invalid or expired verification code.');
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
   const handleResendMagicLink = async () => {
     if (!targetEmail || targetEmail === 'your email') {
       toast.danger('Email address not found. Please try signing up again.');
@@ -97,7 +148,7 @@ export const EmailVerification: React.FC = () => {
         if (otpErr) throw otpErr;
       }
 
-      toast.success('New magic link sent to your email!');
+      toast.success('New verification link sent to your email!');
       setTimer(60);
     } catch (err: any) {
       toast.danger(err.message || 'Failed to resend magic link');
@@ -120,7 +171,7 @@ export const EmailVerification: React.FC = () => {
             <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-success-500/10 text-success-500 border border-success-500/30">
               <TickCircle size={44} color="currentColor" variant="Broken" />
             </div>
-            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Magic Link Verified!</h2>
+            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Account Verified!</h2>
             <p className="text-zinc-550 text-xs font-light">Redirecting you to your HustlePay dashboard...</p>
           </div>
         ) : (
@@ -144,27 +195,48 @@ export const EmailVerification: React.FC = () => {
               </div>
             </div>
 
-            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Check Your Email</h2>
+            <h2 className="text-2xl font-medium text-zinc-900 tracking-tight">Verify Your Email</h2>
             <p className="mt-2 text-xs text-zinc-555 font-light max-w-sm mx-auto">
-              We sent a sign-in magic link to{' '}
+              We sent a verification link & 6-digit code to{' '}
               <span className="text-brand-500 font-bold break-all">{targetEmail}</span>
             </p>
 
             <div ref={cardRef} className="liquid-glass-auth rounded-[32px] p-6 mt-6 relative overflow-hidden text-left">
               <div className="flex flex-col gap-4">
-                <div className="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 flex items-start gap-3">
-                  <DirectInbox size={22} className="text-brand-500 shrink-0 mt-0.5" color="currentColor" variant="Broken" />
-                  <div className="text-xs text-zinc-700">
-                    <p className="font-semibold text-zinc-900 mb-0.5">Click the link in your inbox</p>
-                    <p className="text-zinc-555 font-light text-[11px] leading-relaxed">
-                      Tap the secure link inside the email to instantly verify your account and sign in. No password or OTP typing required.
-                    </p>
-                  </div>
+                {/* OTP Code Form */}
+                <form onSubmit={handleVerifyOtp} className="space-y-3">
+                  <label className="text-[11px] text-zinc-700 font-bold block">
+                    Enter 6-Digit Code (or click email link)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123456"
+                    className="w-full bg-white/80 border border-zinc-300 rounded-xl px-4 py-2.5 text-center text-lg font-mono font-bold text-zinc-900 focus:outline-none focus:border-brand-500 tracking-widest shadow-inner"
+                  />
+                  {otpError && <p className="text-xs text-danger-500 font-medium">{otpError}</p>}
+
+                  <Button
+                    type="submit"
+                    isDisabled={verifyingOtp || otpCode.length < 6}
+                    className="w-full font-bold h-11 bg-brand-500 hover:bg-brand-600 text-white rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {verifyingOtp ? <Spinner size="sm" /> : 'Confirm Code'}
+                  </Button>
+                </form>
+
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-zinc-200"></div>
+                  <span className="flex-shrink mx-2 text-[10px] uppercase text-zinc-400 font-bold">OR</span>
+                  <div className="flex-grow border-t border-zinc-200"></div>
                 </div>
 
                 <Button
                   onClick={handleOpenMailApp}
-                  className="w-full font-bold h-12 bg-brand-500 hover:bg-brand-600 text-white-force rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                  variant="outline"
+                  className="w-full font-bold h-11 border border-zinc-300 hover:bg-zinc-100 text-zinc-800 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer bg-white/60"
                 >
                   <DirectInbox size={18} color="currentColor" variant="Broken" />
                   <span>Open Mail App</span>
@@ -188,7 +260,7 @@ export const EmailVerification: React.FC = () => {
                       ) : (
                         <Refresh size={14} color="currentColor" variant="Broken" />
                       )}
-                      <span>Resend Magic Link</span>
+                      <span>Resend Verification Link</span>
                     </Button>
                   )}
                 </div>

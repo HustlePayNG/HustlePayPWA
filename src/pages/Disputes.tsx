@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Dispute, type Booking } from '../services/mockDb';
+import type { Dispute, Booking } from '../types';
 import { supabaseDb } from '../services/supabaseDb';
 import { uploadDisputeEvidence } from '../services/supabase';
 import { ArrowLeft, ShieldSecurity, Gallery, CloseCircle, TickCircle } from 'iconsax-react';
@@ -27,14 +27,11 @@ export const Disputes: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      // Clear dispute notifications
-      mockDb.markNotificationsByKeywordsAsRead(user.id, ['dispute']);
       refreshNotifications();
-
       loadDisputes();
       loadEligibleBookings();
     }
-  }, [user, refreshNotifications]);
+  }, [user]);
 
   const loadDisputes = async () => {
     if (!user) return;
@@ -44,23 +41,18 @@ export const Disputes: React.FC = () => {
       if (supaDisputes && supaDisputes.length > 0) {
         const mapped: Dispute[] = supaDisputes.map(d => ({
           id: d.id,
-          reference: d.booking_ref,
           bookingId: d.booking_id,
-          bookingRef: d.booking_ref,
-          openedByUserId: d.complainant_id,
+          raisedByUserId: d.complainant_id || d.raised_by_user_id || '',
           reason: d.reason,
           description: d.description,
           evidenceUrls: d.evidence_urls || [],
           status: d.status as Dispute['status'],
-          resolution: d.resolution_outcome,
           createdAt: d.created_at
         }));
         setDisputes(mapped);
-      } else {
-        setDisputes(mockDb.getDisputes(user.id));
       }
     } catch (err) {
-      setDisputes(mockDb.getDisputes(user.id));
+      console.warn('loadDisputes error:', err);
     } finally {
       setLoading(false);
     }
@@ -84,7 +76,7 @@ export const Disputes: React.FC = () => {
           seekerPhone: '',
           serviceName: b.service_name,
           description: b.description || '',
-          photos: [],
+          photos: [] as string[],
           scheduledStartAt: b.created_at,
           address: b.address || '',
           calloutFee: b.callout_fee,
@@ -94,11 +86,9 @@ export const Disputes: React.FC = () => {
           updatedAt: b.updated_at || b.created_at
         }));
         setUserBookings(mapped);
-      } else {
-        setUserBookings(mockDb.getBookings(user.id, mode));
       }
     } catch (err) {
-      setUserBookings(mockDb.getBookings(user.id, mode));
+      console.warn('loadEligibleBookings note:', err);
     }
   };
 
@@ -143,26 +133,24 @@ export const Disputes: React.FC = () => {
       const respondentId = user.id === booking.seekerId ? booking.artisanId : booking.seekerId;
       await supabaseDb.createDispute({
         bookingId: booking.id,
-        bookingRef: booking.reference,
+        bookingRef: (booking as any).reference || 'REF-BOOKING',
         complainantId: user.id,
         respondentId,
         reason,
         description: description.trim(),
         evidenceUrls
       });
-    } catch (err) {
-      console.warn('Supabase createDispute Fallback:', err);
+      toast.success('Dispute claim filed successfully! Operations team will review.');
+    } catch (err: any) {
+      toast.danger(err.message || 'Failed to file dispute claim.');
+    } finally {
+      setSubmitting(false);
+      setShowFileModal(false);
+      setDescription('');
+      setEvidenceFiles([]);
+      setSelectedBookingId('');
+      loadDisputes();
     }
-
-    mockDb.createDispute(booking.id, user.id, reason, description.trim(), evidenceUrls);
-
-    toast.success('Dispute claim filed successfully! Operations team will review.');
-    setSubmitting(false);
-    setShowFileModal(false);
-    setDescription('');
-    setEvidenceFiles([]);
-    setSelectedBookingId('');
-    loadDisputes();
   };
 
   const filteredDisputes = disputes.filter(d => {

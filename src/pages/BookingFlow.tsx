@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { mockDb, type ArtisanProfile } from '../services/mockDb';
+import type { ArtisanProfile } from '../types';
+import { supabaseDb } from '../services/supabaseDb';
 import { useAppStore } from '../store';
 import { ArrowLeft, Gallery, Flash, TickCircle } from 'iconsax-react';
 import { TextArea, Button, Spinner, toast } from '@heroui/react';
@@ -22,14 +23,12 @@ export const BookingFlow: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      const art = mockDb.getArtisanById(id);
-      setArtisan(art);
-      if (art && serviceId) {
-        const srv = art.services.find(s => s.id === serviceId);
-        if (srv) {
-          setSelectedService(srv);
+      supabaseDb.getProfile(id).then(art => {
+        if (art) {
+          setArtisan(art as any);
+          setSelectedService({ id: 'srv-default', name: art.business_name || art.full_name || 'Standard Service', price: art.base_rate || 15000 });
         }
-      }
+      }).catch(() => {});
     }
     refreshWallet();
   }, [id, serviceId]);
@@ -41,35 +40,36 @@ export const BookingFlow: React.FC = () => {
     setPhotos([...photos, url]);
   };
 
-  const handleConfirmBooking = () => {
-    if (!artisan || !selectedService) return;
+  const handleConfirmBooking = async () => {
+    if (!artisan || !user) return;
+    const calloutFee = artisan.calloutFee || 3000;
     
     // Check wallet balance
-    if (!wallet || wallet.balance < artisan.pricing.calloutFee) {
-      toast.danger(`Insufficient funds. Your balance is ₦${wallet?.balance.toLocaleString()} but this booking requires a ₦${artisan.pricing.calloutFee.toLocaleString()} call-out fee. Please fund your wallet.`);
+    if (!wallet || wallet.balance < calloutFee) {
+      toast.danger(`Insufficient funds. Your balance is ₦${wallet?.balance?.toLocaleString() || 0} but this booking requires a ₦${calloutFee.toLocaleString()} call-out fee. Please fund your wallet.`);
       navigate('/wallet');
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
-      // Create actual booking record in state store
-      mockDb.createBooking(
-        user?.id || 'unknown',
-        artisan.id,
-        selectedService.name,
-        description,
-        photos,
-        new Date(Date.now() + 24*60*60*1000).toISOString()
-      );
-
-      // Update global store
+    try {
+      await supabaseDb.createBooking({
+        seekerId: user.id,
+        artisanId: artisan.id,
+        serviceName: selectedService?.name || artisan.businessName || 'Artisan Service',
+        description: description || 'Call-out assessment requested',
+        address: user.address?.formattedAddress || 'Lagos, Nigeria',
+        calloutFee: calloutFee,
+        estimatedAmount: selectedService?.price || 10000,
+        photos
+      });
       refreshBookings();
-      refreshWallet();
-
       setLoading(false);
       setStep(2);
-    }, 1500);
+    } catch (e: any) {
+      setLoading(false);
+      toast.danger(e.message || 'Failed to create booking.');
+    }
   };
 
   if (!artisan || !selectedService) {
@@ -89,7 +89,7 @@ export const BookingFlow: React.FC = () => {
         
         <h2 className="text-2xl font-extrabold text-white tracking-tight">Booking Confirmed!</h2>
         <p className="mt-2.5 text-xs text-zinc-400 max-w-xs leading-relaxed font-light">
-          Your commitment fee of ₦{artisan.pricing.calloutFee.toLocaleString()} has been locked in escrow. 
+          Your commitment fee of ₦{(artisan.calloutFee || artisan.pricing?.calloutFee || 3000).toLocaleString()} has been locked in escrow. 
           The artisan has been notified to proceed.
         </p>
 
@@ -185,7 +185,7 @@ export const BookingFlow: React.FC = () => {
           Escrow Guarantee commitment
         </span>
         <p className="text-[11px] text-zinc-300 leading-relaxed font-light">
-          HustlePay secures your ₦{artisan.pricing.calloutFee.toLocaleString()} call-out fee in a multi-sig smart escrow account. 
+          HustlePay secures your ₦{(artisan.calloutFee || artisan.pricing?.calloutFee || 3000).toLocaleString()} call-out fee in a multi-sig smart escrow account. 
           The funds are only released to the artisan once they arrive at your service location and confirm the job assessment.
         </p>
 
@@ -193,7 +193,7 @@ export const BookingFlow: React.FC = () => {
 
         <div className="flex justify-between items-center text-xs font-semibold">
           <span className="text-zinc-400">Your Wallet Balance:</span>
-          <span className={wallet && wallet.balance >= artisan.pricing.calloutFee ? 'text-success-400 font-bold' : 'text-danger-400 font-bold'}>
+          <span className={wallet && wallet.balance >= (artisan.calloutFee || artisan.pricing?.calloutFee || 3000) ? 'text-success-400 font-bold' : 'text-danger-400 font-bold'}>
             ₦{wallet?.balance.toLocaleString()}
           </span>
         </div>

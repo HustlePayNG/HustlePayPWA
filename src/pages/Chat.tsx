@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Message, type Booking } from '../services/mockDb';
+import type { Message, Booking } from '../types';
 import { supabaseDb } from '../services/supabaseDb';
 import { ArrowLeft, Send2, MessageText, SecuritySafe, TickCircle } from 'iconsax-react';
 import { Spinner } from '@heroui/react';
@@ -21,10 +21,7 @@ export const Chat: React.FC = () => {
 
   useEffect(() => {
     if (bookingId && user) {
-      // Clear message notifications
-      mockDb.markNotificationsByKeywordsAsRead(user.id, ['message', 'chat']);
       refreshNotifications();
-
       loadBookingAndMessages();
     }
   }, [bookingId, user]);
@@ -38,7 +35,9 @@ export const Chat: React.FC = () => {
         id: rawMsg.id,
         bookingId: rawMsg.booking_id,
         senderId: rawMsg.sender_id,
-        body: rawMsg.body,
+        text: rawMsg.body || rawMsg.text || '',
+        body: rawMsg.body || rawMsg.text || '',
+        read: true,
         createdAt: rawMsg.created_at
       };
 
@@ -88,8 +87,6 @@ export const Chat: React.FC = () => {
           updatedAt: matchedB.updated_at || matchedB.created_at
         };
         setBooking(mappedBooking);
-      } else {
-        setBooking(mockDb.getBookingById(bookingId));
       }
 
       // Load messages
@@ -99,16 +96,14 @@ export const Chat: React.FC = () => {
           id: m.id,
           bookingId: m.booking_id,
           senderId: m.sender_id,
-          body: m.body,
+          text: m.body || (m as any).text || '',
+          read: m.read || false,
           createdAt: m.created_at
         }));
         setMessages(mappedMsgs);
-      } else {
-        setMessages(mockDb.getMessages(bookingId));
       }
     } catch (err) {
-      setBooking(mockDb.getBookingById(bookingId));
-      setMessages(mockDb.getMessages(bookingId));
+      console.warn('Error loading booking and messages:', err);
     } finally {
       setLoading(false);
     }
@@ -145,7 +140,7 @@ export const Chat: React.FC = () => {
 
   const otherPartyName = user.id === booking.seekerId ? booking.artisanName : booking.seekerName;
   const otherPartyAvatar = user.id === booking.seekerId 
-    ? booking.artisanAvatar 
+    ? (booking as any).artisanAvatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${booking.artisanName}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${booking.seekerName}`;
   const targetId = user.id === booking.seekerId ? booking.artisanId : booking.seekerId;
 
@@ -158,10 +153,19 @@ export const Chat: React.FC = () => {
 
     try {
       await supabaseDb.sendMessage(bookingId, user.id, text, targetId);
+      const updatedSupaMsgs = await supabaseDb.getMessages(bookingId);
+      if (updatedSupaMsgs) {
+        setMessages(updatedSupaMsgs.map(m => ({
+          id: m.id,
+          bookingId: m.booking_id,
+          senderId: m.sender_id,
+          text: m.body || (m as any).text || '',
+          read: m.read || false,
+          createdAt: m.created_at
+        })));
+      }
     } catch (err) {
-      console.warn('Supabase Realtime Send Fallback:', err);
-      mockDb.sendMessage(bookingId, user.id, text);
-      setMessages(mockDb.getMessages(bookingId));
+      console.error('Error sending message:', err);
     } finally {
       setSending(false);
     }

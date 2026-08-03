@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { mockDb, type Transaction, type BankAccount } from '../services/mockDb';
+import type { Transaction } from '../types';
+import { supabaseDb } from '../services/supabaseDb';
 import { 
   Card, Add, ArrowDown, ArrowUp, 
   Clock, Bank, ArrowLeft 
@@ -11,6 +12,13 @@ import {
   Select, SelectTrigger, SelectValue, SelectPopover, ListBox, ListBoxItem,
   Button, Modal, ModalBackdrop, ModalContainer, ModalDialog, ModalBody, ModalHeader, ModalFooter, Spinner, toast 
 } from '@heroui/react';
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+}
 
 export const Wallet: React.FC = () => {
   const navigate = useNavigate();
@@ -37,23 +45,17 @@ export const Wallet: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      // Clear wallet/payment notifications
-      mockDb.markNotificationsByKeywordsAsRead(user.id, ['wallet', 'payment', 'withdraw', 'received', 'paid', 'refund']);
       refreshNotifications();
-
-      // Sync local component state with DB
-      setTransactions(mockDb.getTransactions(user.id));
-      const banks = mockDb.getBankAccounts(user.id);
-      setBankAccounts(banks);
-      if (banks.length > 0 && !selectedBankId) {
-        setSelectedBankId(banks[0].id);
+      refreshWallet();
+      if (wallet && wallet.transactions) {
+        setTransactions(wallet.transactions);
       }
     }
-  }, [user, selectedBankId, refreshNotifications]);
+  }, [user, refreshNotifications]);
 
   if (!user) return null;
 
-  const handleAddMoney = () => {
+  const handleAddMoney = async () => {
     const amt = parseFloat(addAmount);
     if (isNaN(amt) || amt <= 0) {
       toast.warning('Please enter a valid amount.');
@@ -61,17 +63,20 @@ export const Wallet: React.FC = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      mockDb.creditWallet(user.id, amt, `Top-up via Card (*${cardNum.slice(-4)})`, `TX-${Math.floor(100000 + Math.random() * 900000)}`);
-      refreshWallet();
+    try {
+      await supabaseDb.creditWallet(user.id, amt, `Top-up via Card (*${cardNum.slice(-4)})`, `TX-${Date.now()}`);
+      await refreshWallet();
       toast.success('Funds added successfully!');
-      setLoading(false);
       setShowAddMoney(false);
       setAddAmount('10000');
-    }, 1500);
+    } catch (e: any) {
+      toast.danger(e.message || 'Failed to add funds.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amt = parseFloat(withdrawAmount);
     if (isNaN(amt) || amt <= 0) {
       toast.warning('Please enter a valid amount.');
@@ -83,21 +88,18 @@ export const Wallet: React.FC = () => {
       return;
     }
 
-    const bank = bankAccounts.find(b => b.id === selectedBankId);
-    if (!bank) {
-      toast.warning('Please select a destination bank.');
-      return;
-    }
-
     setLoading(true);
-    setTimeout(() => {
-      mockDb.deductWallet(user.id, amt, `Withdrawal to ${bank.bankName}`, `TX-${Math.floor(100000 + Math.random() * 900000)}`);
-      refreshWallet();
+    try {
+      await supabaseDb.debitWallet(user.id, amt, `Withdrawal to Bank Account`, `TX-${Date.now()}`);
+      await refreshWallet();
       toast.success('Withdrawal processed successfully!');
-      setLoading(false);
       setShowWithdraw(false);
       setWithdrawAmount('5000');
-    }, 1500);
+    } catch (e: any) {
+      toast.danger(e.message || 'Failed to process withdrawal.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddBank = () => {
@@ -112,16 +114,20 @@ export const Wallet: React.FC = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      mockDb.addBankAccount(user.id, bankName, accNumber, accName);
-      refreshWallet(); // triggers re-render of linked banks
-      toast.success('Bank account linked successfully!');
-      setLoading(false);
-      setShowAddBank(false);
-      setBankName('');
-      setAccNumber('');
-      setAccName('');
-    }, 1200);
+    const newBank: BankAccount = {
+      id: `bank-${Date.now()}`,
+      bankName,
+      accountNumber: accNumber,
+      accountName: accName
+    };
+    setBankAccounts(prev => [...prev, newBank]);
+    setSelectedBankId(newBank.id);
+    toast.success('Bank account linked successfully!');
+    setLoading(false);
+    setShowAddBank(false);
+    setBankName('');
+    setAccNumber('');
+    setAccName('');
   };
 
   const getTxColor = (type: string, direction: Transaction['direction']) => {

@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
-import { mockDb, type Booking } from '../services/mockDb';
+import type { Booking } from '../types';
 import { Calendar, TickCircle } from 'iconsax-react';
 
 export const History: React.FC = () => {
-  const { user, refreshBookings } = useAppStore();
+  const { user, bookings, refreshBookings } = useAppStore();
   const [completedJobs, setCompletedJobs] = useState<Booking[]>([]);
 
   useEffect(() => {
     refreshBookings();
-    if (user) {
-      const all = mockDb.getBookings(user.id, 'artisan');
-      setCompletedJobs(all.filter(b => b.status === 'seeker_confirmed'));
-    }
   }, [user]);
+
+  useEffect(() => {
+    setCompletedJobs(bookings.filter(b => b.status === 'completed' || (b.status as string) === 'seeker_confirmed'));
+  }, [bookings]);
 
   return (
     <div className="flex-1 flex flex-col px-4 py-6 bg-zinc-950 text-left animate-in fade-in">

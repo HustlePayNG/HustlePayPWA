@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabaseDb } from '../../services/supabaseDb';
-import { mockDb, type Dispute } from '../../services/mockDb';
+import type { Dispute } from '../../types';
+import { supabase } from '../../services/supabase';
 import { ShieldSecurity, Eye, CloseCircle, Refresh, Gallery } from 'iconsax-react';
 import { Button, Spinner, toast } from '@heroui/react';
 
@@ -18,8 +18,10 @@ export const AdminDisputes: React.FC = () => {
   const loadDisputes = async () => {
     setLoading(true);
     try {
-      const list = mockDb.getDisputes('default-seeker');
-      setDisputes(list);
+      const { data } = await supabase.from('disputes').select('*');
+      if (data) {
+        setDisputes(data as any);
+      }
     } catch (err) {
       setDisputes([]);
     } finally {
@@ -34,9 +36,9 @@ export const AdminDisputes: React.FC = () => {
         ? 'Full refund processed back to seeker wallet after moderation review.'
         : 'Dispute closed in favor of artisan. Escrow funds released minus platform fee.';
       
-      await supabaseDb.resolveDispute(disputeId, resolutionText);
+      await supabase.from('disputes').update({ status: 'resolved', resolution_notes: resolutionText }).eq('id', disputeId);
 
-      setDisputes(prev => prev.map(d => d.id === disputeId ? { ...d, status: 'resolved', resolutionOutcome: resolutionText } : d));
+      setDisputes(prev => prev.map(d => d.id === disputeId ? { ...d, status: 'resolved', resolutionNotes: resolutionText } : d));
 
       toast.success(`Dispute claim resolved: ${outcome.replace('_', ' ').toUpperCase()}`);
       setSelectedDispute(null);

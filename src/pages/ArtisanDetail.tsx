@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockDb, type ArtisanProfile, type ArtisanPost } from '../services/mockDb';
+import type { ArtisanProfile, ArtisanPost } from '../types';
+import { supabaseDb } from '../services/supabaseDb';
 import { Star, Location, Award, Calendar, ArrowLeft, TickCircle, Heart } from 'iconsax-react';
 import { Button, toast } from '@heroui/react';
 
@@ -12,12 +13,14 @@ export const ArtisanDetail: React.FC = () => {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [customRequest, setCustomRequest] = useState('');
   const [useCustom, setUseCustom] = useState(false);
-  const [posts, setPosts] = useState<ArtisanPost[]>([]);
+  const [posts] = useState<ArtisanPost[]>([]);
 
   useEffect(() => {
     if (id) {
-      setArtisan(mockDb.getArtisanById(id));
-      setPosts(mockDb.getPostsByArtisan(id));
+      supabaseDb.getProfile(id).then(profile => {
+        if (profile) setArtisan(profile as any);
+      }).catch(() => {});
+
       try {
         const stored = localStorage.getItem('hp_recently_viewed');
         let list: string[] = stored ? JSON.parse(stored) : [];
