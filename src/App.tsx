@@ -41,6 +41,16 @@ import Discover from './pages/Discover';
 import Messages from './pages/Messages';
 import NotFound from './pages/NotFound';
 
+// Admin Portal Pages
+import AdminLayout from './admin/pages/AdminLayout';
+import { AdminOverview } from './admin/pages/AdminOverview';
+import { KycQueue } from './admin/pages/KycQueue';
+import { AdminDisputes } from './admin/pages/AdminDisputes';
+import { FinancialLedger } from './admin/pages/FinancialLedger';
+import { UserDirectory } from './admin/pages/UserDirectory';
+import { MarketplaceMonitor } from './admin/pages/MarketplaceMonitor';
+import { ContentModeration } from './admin/pages/ContentModeration';
+
 // Route Guard
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAppStore();
@@ -72,14 +82,12 @@ const HomeRedirect = () => {
   if (!user) return <Navigate to="/login" replace />;
 
   if (activeMode === 'artisan') {
-    // If not fully approved, they undergo onboarding (which displays pending screen)
     if (user.kycStatus !== 'approved') {
       return <ArtisanOnboarding />;
     }
     return <ArtisanDashboard />;
   }
 
-  // Seeker Home
   return <SeekerHome />;
 };
 
@@ -105,175 +113,194 @@ export const App: React.FC = () => {
     <>
       <ToastProvider placement="top" />
       <BrowserRouter>
-        <MobileFrame>
-          <Routes>
-            {/* Intro Tour */}
-            <Route path="/intro" element={<IntroOnboarding />} />
+        <Routes>
+          {/* Admin Secret Portal (Full Desktop Viewport) */}
+          <Route path="/backdoor" element={<AdminLayout />}>
+            <Route index element={<AdminOverview />} />
+            <Route path="kyc" element={<KycQueue />} />
+            <Route path="disputes" element={<AdminDisputes />} />
+            <Route path="ledger" element={<FinancialLedger />} />
+            <Route path="users" element={<UserDirectory />} />
+            <Route path="marketplace" element={<MarketplaceMonitor />} />
+            <Route path="content" element={<ContentModeration />} />
+          </Route>
 
-            {/* Non-Layout Auth Pages */}
-            <Route path="/login" element={<LoginRoute />} />
-            <Route path="/signup" element={<SignupRoute />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/password-reset" element={<PasswordReset />} />
+          {/* Mobile PWA Application Routes */}
+          <Route
+            path="/*"
+            element={
+              <MobileFrame>
+                <Routes>
+                  {/* Intro Tour */}
+                  <Route path="/intro" element={<IntroOnboarding />} />
 
-            {/* Authenticated Pages wrapped with Shell Layout */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <HomeRedirect />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  {/* Non-Layout Auth Pages */}
+                  <Route path="/login" element={<LoginRoute />} />
+                  <Route path="/signup" element={<SignupRoute />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/verify-email" element={<EmailVerification />} />
+                  <Route path="/password-reset" element={<PasswordReset />} />
 
-            <Route
-              path="/artisan/:id"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <ArtisanDetail />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  {/* Authenticated Pages wrapped with Shell Layout */}
+                  <Route
+                    path="/"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <HomeRedirect />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/booking-flow/:id"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <BookingFlow />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/artisan/:id"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <ArtisanDetail />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/requests"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Requests />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/booking-flow/:id"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <BookingFlow />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/bookings"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Bookings />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/requests"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Requests />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/history"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <History />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/bookings"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Bookings />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/wallet"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Wallet />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/history"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <History />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/disputes"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Disputes />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/wallet"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Wallet />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/chat/:bookingId"
-              element={
-                <PrivateRoute>
-                  <Chat />
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/disputes"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Disputes />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/settings"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Settings />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/chat/:bookingId"
+                    element={
+                      <PrivateRoute>
+                        <Chat />
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/help"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Help />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/settings"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Settings />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/more"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <More />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/help"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Help />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/discover"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Discover />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/more"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <More />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            <Route
-              path="/messages"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <Messages />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+                  <Route
+                    path="/discover"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Discover />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
 
-            {/* Fallback to 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </MobileFrame>
+                  <Route
+                    path="/messages"
+                    element={
+                      <PrivateRoute>
+                        <AppLayout>
+                          <Messages />
+                        </AppLayout>
+                      </PrivateRoute>
+                    }
+                  />
+
+                  {/* Fallback to 404 */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </MobileFrame>
+            }
+          />
+        </Routes>
 
         {/* Service Worker Message Listener */}
         <ServiceWorkerListener />
@@ -301,12 +328,10 @@ const ServiceWorkerListener: React.FC = () => {
       if (data.type === 'NAVIGATE') {
         navigate(data.url);
       } else if (data.type === 'PUSH_NOTIFICATION') {
-        // Refresh appropriate store data depending on notification type
         refreshNotifications();
         
         const payload = data.payload;
         if (payload) {
-          // Show in-app notification toast
           toast.success(payload.title, {
             description: payload.body,
             timeout: 5000,
@@ -315,7 +340,6 @@ const ServiceWorkerListener: React.FC = () => {
               style: { backgroundColor: '#33658a', color: '#ffffff' },
               className: 'bg-brand-500 hover:bg-brand-650 text-white font-bold text-white-force',
               onPress: () => {
-                // Determine navigation from payload
                 let targetUrl = '/';
                 const notifData = payload.data || {};
                 if (notifData.bookingId) {

@@ -4,7 +4,7 @@ import { useAppStore } from '../store';
 import { mockDb, type Dispute, type Booking } from '../services/mockDb';
 import { supabaseDb } from '../services/supabaseDb';
 import { uploadDisputeEvidence } from '../services/supabase';
-import { ArrowLeft, ShieldSecurity, AddCircle, Gallery, CloseCircle, TickCircle } from 'iconsax-react';
+import { ArrowLeft, ShieldSecurity, Gallery, CloseCircle, TickCircle } from 'iconsax-react';
 import { Button, Spinner, toast } from '@heroui/react';
 
 export const Disputes: React.FC = () => {
@@ -190,14 +190,6 @@ export const Disputes: React.FC = () => {
         >
           <ArrowLeft size={18} color="currentColor" variant="Broken" />
         </button>
-        
-        <Button
-          onClick={() => setShowFileModal(true)}
-          className="bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md shadow-brand-500/20"
-        >
-          <AddCircle size={16} color="currentColor" variant="Broken" />
-          <span>File New Dispute</span>
-        </Button>
       </div>
 
       <div className="flex items-center gap-2 mb-1">

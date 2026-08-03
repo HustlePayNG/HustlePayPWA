@@ -436,3 +436,11 @@ body[data-sheet-open] nav.fixed {
   transform: translateX(-50%) translateY(8px) !important;
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
+
+/* Sidebar Specific Dark Theme Rules (Sidebar remains dark blue) */
+aside,
+aside button,
+aside button span,
+aside button svg {
+  color: #ffffff !important;
+}

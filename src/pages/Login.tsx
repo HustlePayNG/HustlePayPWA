@@ -70,7 +70,11 @@ export const Login: React.FC = () => {
         const ok = login(email, tempRole);
         if (ok) {
           setLoading(false);
-          navigate('/');
+          if (email.toLowerCase().includes('admin')) {
+            navigate('/backdoor');
+          } else {
+            navigate('/');
+          }
           return;
         }
         throw authError;
@@ -79,7 +83,12 @@ export const Login: React.FC = () => {
       if (data.user) {
         useAppStore.getState().syncSupabaseUserSession(data.user);
         setLoading(false);
-        navigate('/');
+        if (email.toLowerCase().includes('admin')) {
+          navigate('/backdoor');
+        } else {
+          navigate('/');
+        }
+        return;
       }
     } catch (err: any) {
       setLoading(false);

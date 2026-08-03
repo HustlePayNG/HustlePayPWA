@@ -171,7 +171,7 @@ export const Chat: React.FC = () => {
     <div className="flex-1 flex flex-col bg-zinc-955 text-left h-screen relative overflow-hidden">
       
       {/* Top Glass Contact Bar */}
-      <div className="flex items-center gap-3 px-4 h-16 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-850/80 shrink-0 z-20">
+      <div className="flex items-center gap-3 px-4 h-16 bg-zinc-900 border-b border-zinc-850 shrink-0 z-20">
         <button 
           onClick={() => navigate(-1)} 
           className="p-2 hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-white transition-all active:scale-95 cursor-pointer"

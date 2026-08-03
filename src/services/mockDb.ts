@@ -222,8 +222,17 @@ function initializeStorage() {
     localStorage.setItem('hp_bank_accounts', JSON.stringify([]));
     localStorage.setItem('hp_messages', JSON.stringify([]));
     localStorage.setItem('hp_disputes', JSON.stringify([]));
-    localStorage.setItem('hp_notifications', JSON.stringify([]));
-    localStorage.setItem('hp_users', JSON.stringify([]));
+    const seedAdmin: User = {
+      id: 'admin-super-01',
+      email: 'admin@hustlepay.com',
+      fullName: 'HustlePay Super Admin',
+      phone: '+234 800 HUSTLE',
+      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=HustlePayAdmin',
+      roles: ['seeker', 'artisan'],
+      activeModePreference: 'seeker',
+      kycStatus: 'approved'
+    };
+    localStorage.setItem('hp_users', JSON.stringify([seedAdmin]));
   }
 }
 
@@ -294,71 +303,7 @@ export const mockDb = {
   },
 
   getAllPosts: (): ArtisanPost[] => {
-    const stored = getStorageItem<ArtisanPost[]>('hp_artisan_posts');
-    if (stored.length > 0) return stored;
-
-    // Seed posts once
-    const artisans = getStorageItem<ArtisanProfile[]>('hp_artisans');
-    const occupationMap: Record<string, string> = {};
-    artisans.forEach(a => {
-      const n = a.businessName.toLowerCase();
-      const b = a.bio.toLowerCase();
-      if (n.includes('plumb') || b.includes('plumb')) occupationMap[a.id] = 'Plumber';
-      else if (n.includes('elect') || b.includes('elect')) occupationMap[a.id] = 'Electrician';
-      else if (n.includes('carpen') || b.includes('carpen')) occupationMap[a.id] = 'Carpenter';
-      else if (n.includes('clean') || b.includes('clean')) occupationMap[a.id] = 'Cleaner';
-      else if (n.includes('paint') || b.includes('paint')) occupationMap[a.id] = 'Painter';
-      else if (n.includes('mechanic') || n.includes('auto')) occupationMap[a.id] = 'Mechanic';
-      else occupationMap[a.id] = 'Artisan';
-    });
-
-    const categories = ['Completed Work', 'Before & After', 'On-site', 'Showcase', 'Tip'];
-    const captions = [
-      'Just finished this job — client was absolutely thrilled! Clean result every time. 🔧',
-      'Before & after speaks for itself. Quality craftsmanship, always on time. This is why we love what we do.',
-      'On-site today in Lekki. Big project but we love a challenge! 💪 Call us anytime.',
-      'This one took some patience but the finish is immaculate. Proud of this work — 3 days well spent.',
-      'Pro tip: always check the fittings before signing off. Saves everyone time and money later. 💡',
-      'Another satisfied customer! Referrals are always appreciated. Word of mouth is our best marketing 🙏',
-      'Early morning call-out, problem solved in under 2 hours. Fast & reliable — that\'s our promise.',
-    ];
-    const seedComments: PostComment[][] = [
-      [{ id: 'c1', postId: '', userId: 'usr-seed-1', userName: 'Chukwuemeka O.', userAvatar: 'https://i.pravatar.cc/150?img=11', body: 'Great work! How long did this take?', createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }],
-      [{ id: 'c2', postId: '', userId: 'usr-seed-2', userName: 'Amaka T.', userAvatar: 'https://i.pravatar.cc/150?img=5', body: 'This is exactly what I needed done in my house 🙌', createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() }],
-      [],
-      [{ id: 'c3', postId: '', userId: 'usr-seed-3', userName: 'Bello I.', userAvatar: 'https://i.pravatar.cc/150?img=8', body: 'Bookmarking this artisan for next month!', createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }],
-    ];
-    const imagePool = [
-      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
-      'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80',
-      'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80',
-      'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800&q=80',
-    ];
-    const posts: ArtisanPost[] = [];
-    artisans.forEach((a, ai) => {
-      const count = 2 + (ai % 2);
-      for (let i = 0; i < count; i++) {
-        const postId = `post-${a.id}-${i}`;
-        const cms = seedComments[(ai + i) % seedComments.length].map(c => ({ ...c, postId, id: `${c.id}-${postId}` }));
-        posts.push({
-          id: postId,
-          artisanId: a.id,
-          artisanName: a.fullName,
-          artisanAvatar: a.avatarUrl,
-          artisanOccupation: occupationMap[a.id] || 'Artisan',
-          imageUrl: i % 3 !== 2 ? imagePool[(ai + i) % imagePool.length] : undefined,
-          caption: captions[(ai + i) % captions.length],
-          category: categories[(ai + i) % categories.length],
-          likesCount: 4 + ((ai * 3 + i * 7) % 42),
-          likedByMe: false,
-          comments: cms,
-          createdAt: new Date(Date.now() - (i + ai) * 3 * 24 * 60 * 60 * 1000).toISOString(),
-        });
-      }
-    });
-    setStorageItem('hp_artisan_posts', posts);
-    return posts;
+    return getStorageItem<ArtisanPost[]>('hp_artisan_posts');
   },
 
   likePost: (postId: string): ArtisanPost[] => {

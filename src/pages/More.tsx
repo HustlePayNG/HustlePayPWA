@@ -184,7 +184,7 @@ export const More: React.FC = () => {
                 <div className="relative flex items-center justify-center">
                   <Danger size={18} color="currentColor" variant="Broken" className="text-brand-400" />
                   {hasDisputeNotification && (
-                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 ring-1 ring-zinc-950" />
+                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 ring-1 ring-zinc-955" />
                   )}
                 </div>
                 <span className="text-white text-xs font-extrabold">Disputes & Resolution</span>
@@ -192,6 +192,8 @@ export const More: React.FC = () => {
               <ArrowRight2 size={14} color="currentColor" variant="Broken" className="text-zinc-500" />
             </div>
           </button>
+
+
 
           <div className="mx-4 h-px bg-zinc-850/60" />
 

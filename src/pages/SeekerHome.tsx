@@ -484,11 +484,17 @@ export const SeekerHome: React.FC = () => {
             WebkitOverflowScrolling: 'touch'
           }}
         >
-          {recommended.map((art, idx) => (
-            <div
-              key={art.id}
-              className="flex-[0_0_78%] shrink-0 snap-start flex flex-col"
-            >
+          {recommended.length === 0 ? (
+            <div className="w-full glass border border-zinc-850 rounded-[28px] p-8 text-center text-zinc-400 text-xs flex flex-col items-center gap-2 my-2">
+              <p className="font-extrabold text-white text-sm">No Registered Artisans Found</p>
+              <p className="font-light text-zinc-500 text-[11px]">Be the first artisan to sign up and get listed on HustlePay!</p>
+            </div>
+          ) : (
+            recommended.map((art, idx) => (
+              <div
+                key={art.id}
+                className="flex-[0_0_78%] shrink-0 snap-start flex flex-col"
+              >
               {/* ── Card header: avatar + name (above image) ── */}
               <div className="flex items-center gap-2 mb-2 px-0.5">
                 <div className="relative shrink-0">
@@ -583,7 +589,8 @@ export const SeekerHome: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+        )}
         </div>
 
         {/* Dot indicators */}

@@ -34,14 +34,11 @@ export const BookingFlow: React.FC = () => {
     refreshWallet();
   }, [id, serviceId]);
 
-  const handleAddMockPhoto = () => {
-    const mockPhotos = [
-      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=150&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=60'
-    ];
-    const randomUrl = mockPhotos[Math.floor(Math.random() * mockPhotos.length)];
-    setPhotos([...photos, randomUrl]);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPhotos([...photos, url]);
   };
 
   const handleConfirmBooking = () => {
@@ -172,13 +169,11 @@ export const BookingFlow: React.FC = () => {
                 </button>
               </div>
             ))}
-            <button 
-              onClick={handleAddMockPhoto}
-              className="h-16 w-16 rounded-xl border-2 border-dashed border-zinc-800 hover:border-zinc-700 flex flex-col items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-400 transition-colors"
-            >
+            <label className="h-16 w-16 rounded-xl border-2 border-dashed border-zinc-800 hover:border-zinc-700 flex flex-col items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-400 transition-colors cursor-pointer">
               <Gallery size={18} color="currentColor" variant="Broken" />
               <span className="text-[8px] font-bold">Add Photo</span>
-            </button>
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+            </label>
           </div>
         </div>
       </div>
