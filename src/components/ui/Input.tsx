@@ -42,7 +42,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const labelStyles = 'text-[11px] font-semibold text-zinc-400 uppercase tracking-wider';
 
     const baseInputStyles = `
-      flex-1 bg-transparent text-xs text-white placeholder:text-zinc-600 focus:outline-none
+      flex-1 bg-transparent text-base text-white placeholder:text-zinc-600 focus:outline-none
       disabled:bg-zinc-900/50 disabled:text-zinc-600
     `;
 

@@ -212,7 +212,7 @@ export const PasswordReset: React.FC = () => {
                         <input
                           type="email"
                           placeholder="you@example.com"
-                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={email}
                           onChange={(e) => {
                             setEmail(e.target.value);
@@ -252,7 +252,7 @@ export const PasswordReset: React.FC = () => {
                         <input
                           type="text"
                           placeholder="123456"
-                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={code}
                           onChange={(e) => {
                             setCode(e.target.value);
@@ -291,7 +291,7 @@ export const PasswordReset: React.FC = () => {
                         <input
                           type="password"
                           placeholder="••••••••"
-                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={newPassword}
                           onChange={(e) => {
                             setNewPassword(e.target.value);
@@ -310,7 +310,7 @@ export const PasswordReset: React.FC = () => {
                         <input
                           type="password"
                           placeholder="••••••••"
-                          className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                          className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                           value={confirmPassword}
                           onChange={(e) => {
                             setConfirmPassword(e.target.value);

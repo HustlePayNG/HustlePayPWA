@@ -6,6 +6,7 @@ import { TextField, Label, Input, Button, Spinner, Fieldset, toast } from '@hero
 import { uploadAvatar } from '../services/supabase';
 
 import CustomCheckbox from '../components/CustomCheckbox';
+import GoogleAddressAutocomplete from '../components/GoogleAddressAutocomplete';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -184,14 +185,14 @@ export const Settings: React.FC = () => {
               <Label className={`text-xs font-semibold transition-colors ${addressError ? 'text-danger' : 'text-zinc-400'}`}>Service Delivery Location</Label>
               <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-xl bg-zinc-900/50 h-11 transition-all focus-within:border-brand-500 ${addressError ? 'border-danger focus-within:border-danger' : 'border-zinc-800'}`}>
                 <Location className={`shrink-0 transition-colors ${addressError ? 'text-danger' : 'text-zinc-500'}`} size={16} color="currentColor" variant="Broken" />
-                <Input
-                  type="text"
-                  className="w-full bg-transparent text-xs text-white focus:outline-none"
+                <GoogleAddressAutocomplete
                   value={address}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setAddress(e.target.value);
-                    if (e.target.value) setAddressError('');
+                  onChange={(newAddress) => {
+                    setAddress(newAddress);
+                    if (newAddress) setAddressError('');
                   }}
+                  placeholder="Street address, City, State"
+                  className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                 />
               </div>
               {addressError && (

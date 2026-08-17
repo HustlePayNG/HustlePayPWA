@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { User as UserIcon, Sms, Call, Location } from 'iconsax-react';
+import { User as UserIcon, Sms, Call, Location, Lock, Eye, EyeSlash } from 'iconsax-react';
 import { TextField, Label, Button, Spinner, Fieldset, toast } from '@heroui/react';
 import CustomCheckbox from '../components/CustomCheckbox';
 import BackgroundVideo from '../components/BackgroundVideo';
 import { liquidGlass } from '../components/liquidGlass';
+import GoogleAddressAutocomplete from '../components/GoogleAddressAutocomplete';
 
 import { supabase, signInWithGoogle } from '../services/supabase';
 
@@ -16,7 +17,8 @@ export const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const password = 'HustlePay2026!';
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const role: 'seeker' | 'artisan' = 'seeker';
 
   // NDPR compliance unbundled consents (GEN-7)
@@ -46,6 +48,7 @@ export const Signup: React.FC = () => {
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [addressError, setAddressError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [consentError, setConsentError] = useState('');
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -79,6 +82,16 @@ export const Signup: React.FC = () => {
       hasError = true;
     } else {
       setAddressError('');
+    }
+
+    if (!password) {
+      setPasswordError('Please choose a password.');
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters.');
+      hasError = true;
+    } else {
+      setPasswordError('');
     }
 
     if (!termsConsent) {
@@ -169,7 +182,7 @@ export const Signup: React.FC = () => {
                     <input
                       type="text"
                       placeholder="John Doe"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={name}
                       onChange={(e) => {
                         setName(e.target.value);
@@ -189,7 +202,7 @@ export const Signup: React.FC = () => {
                     <input
                       type="email"
                       placeholder="you@example.com"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -209,7 +222,7 @@ export const Signup: React.FC = () => {
                     <input
                       type="tel"
                       placeholder="+234 800 000 0000"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={phone}
                       onChange={(e) => {
                         setPhone(e.target.value);
@@ -226,19 +239,41 @@ export const Signup: React.FC = () => {
                   <Label className={`text-xs font-semibold text-left transition-colors ${addressError ? 'text-danger' : 'text-zinc-505'}`}>Home Address</Label>
                   <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${addressError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
                     <Location className={`shrink-0 mr-1 transition-colors ${addressError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
-                    <input
-                      type="text"
-                      placeholder="Street address, City, State"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                    <GoogleAddressAutocomplete
                       value={address}
-                      onChange={(e) => {
-                        setAddress(e.target.value);
-                        if (e.target.value) setAddressError('');
+                      onChange={(newAddress) => {
+                        setAddress(newAddress);
+                        if (newAddress) setAddressError('');
                       }}
+                      placeholder="Street address, City, State"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                     />
                   </div>
                   {addressError && (
                     <span className="text-[10px] text-danger font-semibold text-left">{addressError}</span>
+                  )}
+                </TextField>
+
+                <TextField className="flex flex-col gap-1.5 w-full">
+                  <Label className={`text-xs font-semibold text-left transition-colors ${passwordError ? 'text-danger' : 'text-zinc-505'}`}>Password</Label>
+                  <div className={`flex items-center gap-2.5 px-3.5 py-3 border rounded-2xl bg-zinc-50/50 focus-within:border-brand-500 transition-all h-12 ${passwordError ? 'border-danger focus-within:border-danger' : 'border-zinc-200'}`}>
+                    <Lock className={`shrink-0 mr-1 transition-colors ${passwordError ? 'text-danger' : 'text-zinc-455'}`} size={18} color="currentColor" variant="Broken" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="At least 6 characters"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (e.target.value) setPasswordError('');
+                      }}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none text-zinc-400 hover:text-zinc-650 shrink-0 cursor-pointer">
+                      {showPassword ? <EyeSlash size={18} color="currentColor" variant="Broken" /> : <Eye size={18} color="currentColor" variant="Broken" />}
+                    </button>
+                  </div>
+                  {passwordError && (
+                    <span className="text-[10px] text-danger font-semibold text-left">{passwordError}</span>
                   )}
                 </TextField>
 
@@ -297,8 +332,9 @@ export const Signup: React.FC = () => {
                   setLoading(true);
                   try {
                     await signInWithGoogle();
-                  } catch (e) {
+                  } catch (e: any) {
                     setLoading(false);
+                    toast.danger(e.message || 'Google OAuth Sign-Up failed');
                   }
                 }}
                 className="h-11 px-6 border border-zinc-200 hover:bg-zinc-50 rounded-2xl flex items-center justify-center gap-2 bg-transparent cursor-pointer text-xs font-bold text-zinc-700"

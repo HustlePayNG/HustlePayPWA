@@ -91,7 +91,7 @@ export const Login: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
     } catch (e: any) {
-      toast.warning('Google OAuth Error: ' + e.message);
+      toast.danger(e.message || 'Google OAuth Sign-In failed');
       setLoading(false);
     }
   };
@@ -127,7 +127,7 @@ export const Login: React.FC = () => {
                     <input
                       type="email"
                       placeholder="you@example.com"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -147,7 +147,7 @@ export const Login: React.FC = () => {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className="w-full bg-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                      className="w-full bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);

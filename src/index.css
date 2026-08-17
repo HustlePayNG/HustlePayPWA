@@ -54,8 +54,12 @@
   --color-danger: #DC2626;
 }
 
-html, body {
+html, body, #root {
   font-family: 'Supreme', sans-serif;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  touch-action: manipulation;
 }
 
 body {
@@ -167,13 +171,12 @@ h1, h2, h3, h4, h5, h6,
   color: #1e293b !important;
 }
 
-/* Input fields & dropdowns color config */
+/* Input fields & dropdowns color config & zoom prevention */
 input, 
 select, 
-textarea,
-input::placeholder,
-textarea::placeholder {
+textarea {
   color: #0f172a !important;
+  font-size: 16px !important; /* Prevents auto-zoom on iOS Safari / mobile browsers */
 }
 input::placeholder,
 textarea::placeholder {
@@ -444,3 +447,52 @@ aside button span,
 aside button svg {
   color: #ffffff !important;
 }
+
+/* ── Google Places Autocomplete Dropdown Styling ─────────────── */
+.pac-container {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  font-family: 'Supreme', sans-serif !important;
+  margin-top: 4px !important;
+  z-index: 999999 !important;
+  overflow: hidden !important;
+  padding: 4px 0 !important;
+}
+
+.pac-item {
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  color: #1e293b !important;
+  border-top: 1px solid #f1f5f9 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.pac-item:first-child {
+  border-top: none !important;
+}
+
+.pac-item:hover,
+.pac-item-selected {
+  background-color: #f8fafc !important;
+}
+
+.pac-item-query {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}
+
+.pac-matched {
+  font-weight: 700 !important;
+  color: #33658a !important;
+}
+
+.pac-icon {
+  margin-top: 0 !important;
+}
+

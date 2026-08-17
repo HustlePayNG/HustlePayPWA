@@ -29,7 +29,12 @@ export const signInWithGoogle = async () => {
     }
   });
 
-  if (error) throw error;
+  if (error) {
+    if (error.message?.includes('missing OAuth secret') || error.message?.includes('provider') || error.message?.includes('Unsupported')) {
+      throw new Error('Google OAuth is not configured in Supabase. Please enter your Google Client ID & Secret in Supabase Dashboard (Authentication -> Providers -> Google). See SUPABASE-SETUP-GUIDE.md for instructions.');
+    }
+    throw error;
+  }
   return data;
 };
 
